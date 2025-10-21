@@ -1,15 +1,18 @@
-import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common'; // <-- Importado
+import { HttpClientModule } from '@angular/common/http'; // <-- Importado
+import { ReactiveFormsModule } from '@angular/forms'; // <-- Importado
 
-import { AppRoutingModule } from './app-routing-module';
-import { App } from './app';
-import { Navegacion } from './components/navegacion/navegacion';
-import { Login } from './pages/login/login';
-import { Home } from './pages/home/home';
-import { SeleccionVuelo } from './pages/seleccion-vuelo/seleccion-vuelo';
-import { MisReservas } from './pages/mis-reservas/mis-reservas';
-import { Reportes } from './pages/reportes/reportes';
-import { AdminDatos } from './pages/admin-datos/admin-datos';
+import { AppRoutingModule } from './app-routing-module'; // Asegúrate que la ruta sea correcta
+import { App } from './app'; // Asegúrate que la ruta y nombre sean correctos
+import { Navegacion } from './components/navegacion/navegacion'; // Asegúrate que la ruta y nombre sean correctos
+import { Login } from './pages/login/login'; // Asegúrate que la ruta y nombre sean correctos
+import { Home } from './pages/home/home'; // Asegúrate que la ruta y nombre sean correctos
+import { SeleccionVuelo } from './pages/seleccion-vuelo/seleccion-vuelo'; // Asegúrate que la ruta y nombre sean correctos
+import { MisReservas } from './pages/mis-reservas/mis-reservas'; // Asegúrate que la ruta y nombre sean correctos
+import { Reportes } from './pages/reportes/reportes'; // Asegúrate que la ruta y nombre sean correctos
+import { AdminDatos } from './pages/admin-datos/admin-datos'; // Asegúrate que la ruta y nombre sean correctos
 
 @NgModule({
   declarations: [
@@ -24,11 +27,15 @@ import { AdminDatos } from './pages/admin-datos/admin-datos';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    CommonModule,         // <-- Añadido
+    HttpClientModule,     // <-- Añadido
+    ReactiveFormsModule   // <-- Añadido
   ],
   providers: [
-    provideBrowserGlobalErrorListeners()
+    // No necesitas provideBrowserGlobalErrorListeners aquí normalmente
+    // Los servicios se proveen con providedIn: 'root' o se listan aquí si no lo usan.
   ],
-  bootstrap: [App]
+  bootstrap: [App] // Asegúrate que App sea el componente raíz correcto
 })
 export class AppModule { }

@@ -1,16 +1,19 @@
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Asiento } from 'src/app/interfaces/asiento.interface';
-import { AsientoService } from 'src/app/services/asiento.service';
-import { CuiService } from 'src/app/services/cui.service';
-import { ReservacionService } from 'src/app/services/reservacion.service';
+import { Asiento } from '../../interfaces/asiento.interface';
+import { AsientoService } from '../../services/asiento.service';
+import { CuiService } from '../../services/cui.service';
+import { ReservacionService } from '../../services/reservacion.service';
 
 // Tipo para agrupar asientos por fila
 type AsientosAgrupados = { [fila: string]: Asiento[] };
 
 @Component({
   selector: 'app-seleccion-vuelo',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './seleccion-vuelo.component.html',
   styleUrls: ['./seleccion-vuelo.component.css']
 })
