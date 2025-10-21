@@ -1,0 +1,80 @@
+/* Global styles for FrutigerAirlines */
+/* Paleta de colores como variables CSS */
+:root {
+  --color-primario: #14C1FA;
+  --color-secundario: #3D9BBA;
+  --color-acento: #476E7A;
+  --color-fondo-oscuro: #31383B;
+  --color-texto: #333;
+}
+
+body {
+  background-color: #f8f8f8;
+  color: var(--color-texto);
+}
+
+/* Colores de UIKIT personalizados */
+.uk-navbar-container {
+  background-color: var(--color-fondo-oscuro) !important;
+}
+
+.uk-navbar-nav > li > a {
+  color: var(--color-primario) !important;
+  font-weight: 600;
+}
+.uk-navbar-nav > li > a:hover {
+  color: white !important;
+}
+
+.uk-button-primary {
+  background-color: var(--color-primario) !important;
+  color: var(--color-fondo-oscuro) !important;
+  border: none;
+}
+.uk-button-primary:hover {
+  background-color: var(--color-secundario) !important;
+  color: white !important;
+}
+
+.uk-button-secondary {
+  background-color: var(--color-acento) !imporant;
+  color: white !important;
+}
+.uk-button-secondary:hover {
+  background-color: var(--color-fondo-oscuro) !important;
+}
+
+/* Estilos para el avión */
+.asiento {
+  width: 40px;
+  height: 40px;
+  margin: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--color-acento);
+  background-color: #fff;
+  color: var(--color-acento);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.asiento.estado-Libre:hover {
+  background-color: var(--color-primario);
+  color: white;
+  transform: scale(1.1);
+}
+
+.asiento.estado-Ocupado {
+  background-color: var(--color-fondo-oscuro);
+  color: #aaa;
+  cursor: not-allowed;
+  border-color: #555;
+}
+
+.asiento.estado-Seleccionado {
+  background-color: #32d296; /* Verde UIKIT */
+  color: white;
+  border-color: #32d296;
+  transform: scale(1.1);
+}

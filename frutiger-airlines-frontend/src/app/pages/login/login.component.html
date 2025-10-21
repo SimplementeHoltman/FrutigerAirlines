@@ -1,0 +1,74 @@
+<div class="uk-flex uk-flex-center uk-flex-middle uk-height-viewport-minus-top">
+  <div class="uk-width-1-2@m">
+    <div uk-grid class="uk-grid-match">
+
+      <div class="uk-width-1-2@m">
+        <div class="uk-card uk-card-default uk-card-body uk-box-shadow-large">
+          <h3 class="uk-card-title uk-text-center">Iniciar Sesión</h3>
+          <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+
+            <div class="uk-margin">
+              <div class="uk-inline uk-width-1-1">
+                <span class="uk-form-icon" uk-icon="icon: mail"></span>
+                <input class="uk-input" type="email" placeholder="Email" formControlName="email" required>
+              </div>
+            </div>
+
+            <div class="uk-margin">
+              <div class="uk-inline uk-width-1-1">
+                <span class="uk-form-icon" uk-icon="icon: lock"></span>
+                <input class="uk-input" type="password" placeholder="Contraseña" formControlName="password" required>
+              </div>
+            </div>
+
+            <div class="uk-margin">
+              <button class="uk-button uk-button-primary uk-width-1-1" type="submit" [disabled]="loginForm.invalid">
+                Ingresar
+              </button>
+            </div>
+
+            <div *ngIf="loginError" class="uk-alert-danger" uk-alert>
+              <p>{{ loginError }}</p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="uk-width-1-2@m">
+        <div class="uk-card uk-card-default uk-card-body uk-box-shadow-large">
+          <h3 class="uk-card-title uk-text-center">Registro</h3>
+          <p class="uk-text-center uk-text-small">Solo correos @gmail.com y @outlook.com</p>
+          <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+
+            <div class="uk-margin">
+              <input class="uk-input" type="text" placeholder="Nombre Completo" formControlName="nombreCompleto" required>
+            </div>
+
+            <div class="uk-margin">
+              <input class="uk-input" type="email" placeholder="Email" formControlName="email" required>
+            </div>
+
+            <div class="uk-margin">
+              <input class="uk-input" type="password" placeholder="Contraseña (min. 6 car.)" formControlName="password" required>
+            </div>
+
+            <div class="uk-margin">
+              <button class="uk-button uk-button-secondary uk-width-1-1" type="submit" [disabled]="registerForm.invalid">
+                Registrarme
+              </button>
+            </div>
+
+            <div *ngIf="registerError" class="uk-alert-danger" uk-alert>
+              <p>{{ registerError }}</p>
+            </div>
+            <div *ngIf="registerSuccess" class="uk-alert-success" uk-alert>
+              <p>{{ registerSuccess }}</p>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

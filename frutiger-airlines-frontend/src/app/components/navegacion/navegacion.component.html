@@ -1,0 +1,23 @@
+<nav class="uk-navbar-container" uk-navbar *ngIf="isLoggedIn">
+  <div class="uk-navbar-left">
+    <a class="uk-navbar-item uk-logo" routerLink="/" style="color: #14C1FA;">FrutigerAirlines</a>
+
+    <ul class="uk-navbar-nav">
+      <li><a routerLink="/seleccionar-vuelo">Reservar</a></li>
+      <li><a routerLink="/mis-reservas">Mis Reservas</a></li>
+      <li><a routerLink="/reportes">Reportes</a></li>
+      <li><a routerLink="/admin-datos">Gestión XML</a></li>
+    </ul>
+  </div>
+
+  <div class="uk-navbar-right">
+    <ul class="uk-navbar-nav">
+      <li>
+        <a (click)="logout()">
+          Cerrar Sesión ({{ userName }})
+          <span uk-icon="icon: sign-out" class="uk-margin-small-left"></span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
