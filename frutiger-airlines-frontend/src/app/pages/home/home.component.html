@@ -1,13 +1,60 @@
-<div class="uk-text-center">
-  <h1 class="uk-heading-medium" style="color: var(--color-secundario);">
-    ¡Bienvenido, {{ userName }}!
-  </h1>
-  <p class="uk-text-lead">Selecciona una opción del menú de navegación para comenzar.</p>
+<div class="uk-container uk-container-small uk-margin-top">
+  <section class="uk-section">
+    <div class="uk-text-center uk-margin-large-bottom">
+      <h1 class="uk-heading-medium" style="color: var(--color-secundario);">¡Bienvenido, {{ userName }}!</h1>
+      <p class="uk-text-lead">Selecciona una opción para comenzar. Puedes volver aquí en cualquier momento desde el menú.</p>
+    </div>
 
-  <div class="uk-margin-large-top">
-    <button class="uk-button uk-button-primary uk-button-large" routerLink="/seleccionar-vuelo">
-      <span uk-icon="icon: plus-circle; ratio: 1.5" class="uk-margin-small-right"></span>
-      Realizar una nueva reserva
-    </button>
-  </div>
+    <div uk-grid="true" class="uk-child-width-1-1 uk-child-width-1-2@s uk-grid-small uk-grid-match">
+      <div>
+        <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+          <h3 class="uk-card-title">Reservar vuelo</h3>
+          <p>Buscar y seleccionar un vuelo nuevo.</p>
+          <button class="uk-button uk-button-primary" type="button" (click)="go('/seleccionar-vuelo')">
+            Ir a Reservar
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+          <h3 class="uk-card-title">Mis reservas</h3>
+          <p>Ver y gestionar tus reservas actuales.</p>
+          <button class="uk-button uk-button-default" type="button" (click)="go('/mis-reservas')">
+            Ver Mis Reservas
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+          <h3 class="uk-card-title">Reportes</h3>
+          <p>Accede a reportes y estadísticas disponibles.</p>
+          <button class="uk-button uk-button-secondary" type="button" (click)="go('/reportes')">
+            Ir a Reportes
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="canAccessAdmin()">
+        <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+          <h3 class="uk-card-title">Gestión XML / Admin</h3>
+          <p>Subir, editar o procesar archivos XML (solo administradores).</p>
+          <button class="uk-button uk-button-danger" type="button" (click)="go('/admin-datos')">
+            Ir a Gestión
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="uk-card uk-card-default uk-card-hover uk-card-body">
+          <h3 class="uk-card-title">Cuenta</h3>
+          <p>Ir a la página de inicio de sesión o cambiar de usuario.</p>
+          <button class="uk-button uk-button-link" type="button" (click)="go('/login')">
+            Ir a Login
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
