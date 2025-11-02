@@ -1,80 +1,211 @@
 /* Global styles for FrutigerAirlines */
-/* Paleta de colores como variables CSS */
+/* Paleta de colores como variables CSS (4 tonos de azul) */
 :root {
-  --color-primario: #14C1FA;
-  --color-secundario: #3D9BBA;
-  --color-acento: #476E7A;
-  --color-fondo-oscuro: #31383B;
-  --color-texto: #333;
+  /* Paleta base */
+  --blue-primary: #007BFF;   /* Principal */
+  --blue-medium:  #3C8DFF;   /* Activo/acentos */
+  --blue-soft:    #A9C9FF;   /* Hover/resaltados */
+  --blue-gray:    #E1EBFF;   /* Líneas/sutiles fondos */
+
+  /* Neutros */
+  --text-main: #1A1A1A;
+  --bg-white:  #FFFFFF;
+
+  /* UI helpers */
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --shadow-sm: 0 2px 10px rgba(0,0,0,.06);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.08);
+}
+
+/* Mapear variables existentes a la nueva paleta para compatibilidad */
+:root {
+  --color-primario: var(--blue-primary);
+  --color-secundario: var(--blue-medium);
+  --color-acento: var(--blue-soft);
+  --color-fondo-oscuro: var(--blue-gray);
+  --color-texto: var(--text-main);
 }
 
 body {
-  background-color: #f8f8f8;
-  color: var(--color-texto);
+  background-color: var(--bg-white);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Colores de UIKIT personalizados */
+/* Secciones base */
+.uk-section-muted {
+  background-color: var(--bg-white);
+}
+
+/* Navbar */
 .uk-navbar-container {
-  background-color: var(--color-fondo-oscuro) !important;
+  background-color: var(--bg-white) !important;
+  border-bottom: 1px solid var(--blue-gray);
+  box-shadow: var(--shadow-sm);
 }
-
+.uk-logo {
+  color: var(--blue-primary) !important;
+  font-weight: 700;
+}
 .uk-navbar-nav > li > a {
-  color: var(--color-primario) !important;
+  color: var(--text-main) !important;
   font-weight: 600;
 }
-.uk-navbar-nav > li > a:hover {
-  color: white !important;
+.uk-navbar-nav > li > a:hover,
+.uk-navbar-nav > li.uk-active > a {
+  color: var(--blue-primary) !important;
 }
 
+/* Botones */
+.uk-button {
+  border-radius: var(--radius-md);
+}
 .uk-button-primary {
-  background-color: var(--color-primario) !important;
-  color: var(--color-fondo-oscuro) !important;
+  background-color: var(--blue-primary) !important;
+  color: #fff !important;
   border: none;
+  box-shadow: var(--shadow-sm);
 }
 .uk-button-primary:hover {
-  background-color: var(--color-secundario) !important;
-  color: white !important;
+  background-color: var(--blue-medium) !important;
 }
-
 .uk-button-secondary {
-  background-color: var(--color-acento) !imporant;
-  color: white !important;
+  background-color: var(--blue-medium) !important;
+  color: #fff !important;
+  border: none;
+  box-shadow: var(--shadow-sm);
 }
 .uk-button-secondary:hover {
-  background-color: var(--color-fondo-oscuro) !important;
+  background-color: var(--blue-primary) !important;
+}
+.uk-button-danger {
+  background-color: var(--blue-medium) !important;
+  color: #fff !important;
+  border: none;
+}
+.uk-button-danger:hover {
+  background-color: var(--blue-primary) !important;
+}
+.uk-button-default {
+  background-color: #fff;
+  color: var(--text-main);
+  border: 1px solid var(--blue-soft);
+}
+.uk-button-default:hover {
+  border-color: var(--blue-medium);
+  color: var(--text-main);
 }
 
-/* Estilos para el avión */
+/* Cards */
+.uk-card-default {
+  background: #fff;
+  border: 1px solid var(--blue-gray);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.uk-card-title {
+  color: var(--text-main);
+}
+
+/* Formularios */
+.uk-input,
+.uk-select,
+.uk-textarea {
+  background: #fff;
+  color: var(--text-main);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--blue-gray);
+}
+.uk-input:focus,
+.uk-select:focus,
+.uk-textarea:focus {
+  border-color: var(--blue-medium);
+  box-shadow: 0 0 0 3px rgba(60, 141, 255, 0.15);
+}
+
+/* Labels y alertas coherentes con la paleta */
+.uk-label-warning {
+  background: var(--blue-soft);
+  color: var(--blue-primary);
+}
+.uk-alert-primary {
+  background: var(--blue-gray);
+  color: var(--text-main);
+  border-left: 4px solid var(--blue-medium);
+}
+.uk-alert-success {
+  background: var(--blue-gray);
+  color: var(--text-main);
+  border-left: 4px solid var(--blue-primary);
+}
+.uk-alert-danger {
+  background: var(--blue-gray);
+  color: var(--text-main);
+  border-left: 4px solid var(--blue-medium);
+}
+
+/* Offcanvas sobre fondo claro */
+.uk-offcanvas-bar {
+  background: #fff;
+  color: var(--text-main);
+}
+.uk-offcanvas-bar a { color: var(--text-main); }
+.uk-offcanvas-bar a:hover { color: var(--blue-primary); }
+
+/* LOGO placeholder (reemplazable por imagen) */
+.fa-logo {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-md);
+}
+.fa-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Tamaños responsivos del logo */
+@media (max-width: 640px) {
+  .fa-logo { width: 48px; height: 48px; }
+}
+@media (min-width: 1200px) {
+  .fa-logo { width: 64px; height: 64px; }
+}
+
+/* Estilos para el avión (asientos) */
 .asiento {
   width: 40px;
   height: 40px;
   margin: 4px;
-  border-radius: 4px;
-  border: 1px solid var(--color-acento);
+  border-radius: 8px;
+  border: 1px solid var(--blue-medium);
   background-color: #fff;
-  color: var(--color-acento);
+  color: var(--blue-medium);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-
 .asiento.estado-Libre:hover {
-  background-color: var(--color-primario);
-  color: white;
-  transform: scale(1.1);
+  background-color: var(--blue-soft);
+  border-color: var(--blue-medium);
+  color: var(--text-main);
+  transform: translateY(-1px);
 }
-
 .asiento.estado-Ocupado {
-  background-color: var(--color-fondo-oscuro);
-  color: #aaa;
+  background-color: var(--blue-gray);
+  color: #6b7a99;
   cursor: not-allowed;
-  border-color: #555;
+  border-color: #d3defa;
 }
-
 .asiento.estado-Seleccionado {
-  background-color: #32d296; /* Verde UIKIT */
-  color: white;
-  border-color: #32d296;
-  transform: scale(1.1);
+  background-color: var(--blue-primary);
+  color: #fff;
+  border-color: var(--blue-primary);
 }
