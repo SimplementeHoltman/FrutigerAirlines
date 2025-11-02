@@ -75,12 +75,35 @@ router.get('/reservaciones-usuario', async (req, res) => {
         u.usuario_id,
         u.email,
         u.nombre_completo,
-        COUNT(r.reservacion_id) AS total_reservaciones,
-        COUNT(CASE WHEN r.estado = 'ACTIVA' THEN 1 END) AS reservaciones_activas,
-        (COUNT(CASE WHEN r.estado = 'ACTIVA' THEN 1 END) >= 5) AS es_vip
+        -- Compras totales (todas las filas, activas o no)
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT COALESCE(r2.compra_id, to_char(date_trunc('second', r2.fecha_reservacion), 'YYYY-MM-DD"T"HH24:MI:SS')))
+            FROM reservaciones r2
+            WHERE r2.usuario_id = u.usuario_id
+          ), 0
+        ) AS total_reservaciones,
+        -- Compras activas
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT COALESCE(r3.compra_id, to_char(date_trunc('second', r3.fecha_reservacion), 'YYYY-MM-DD"T"HH24:MI:SS')))
+            FROM reservaciones r3
+            WHERE r3.usuario_id = u.usuario_id AND r3.estado = 'ACTIVA'
+          ), 0
+        ) AS reservaciones_activas,
+        -- Asientos totales (informativo)
+        COALESCE((SELECT COUNT(*) FROM reservaciones r4 WHERE r4.usuario_id = u.usuario_id), 0) AS total_asientos,
+        -- Asientos activos (informativo)
+        COALESCE((SELECT COUNT(*) FROM reservaciones r5 WHERE r5.usuario_id = u.usuario_id AND r5.estado = 'ACTIVA'), 0) AS asientos_activos,
+        -- VIP por compras activas
+        (
+          COALESCE((
+            SELECT COUNT(DISTINCT COALESCE(r6.compra_id, to_char(date_trunc('second', r6.fecha_reservacion), 'YYYY-MM-DD"T"HH24:MI:SS')))
+            FROM reservaciones r6
+            WHERE r6.usuario_id = u.usuario_id AND r6.estado = 'ACTIVA'
+          ), 0) >= 5
+        ) AS es_vip
       FROM usuarios u
-      LEFT JOIN reservaciones r ON u.usuario_id = r.usuario_id
-      GROUP BY u.usuario_id
       ORDER BY u.nombre_completo
     `);
     res.json(rows);

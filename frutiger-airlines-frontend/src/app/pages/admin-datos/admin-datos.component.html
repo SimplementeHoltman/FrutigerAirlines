@@ -1,1 +1,33 @@
-<p>Admin Datos (placeholder)</p>
+<app-navegacion></app-navegacion>
+
+<div class="uk-container uk-margin-top">
+	<h2>Gestión de Archivos XML</h2>
+
+	<div class="uk-card uk-card-default uk-card-body uk-margin">
+		<h3 class="uk-card-title">Exportar</h3>
+		<p>Descarga un archivo XML con los usuarios, asientos y reservaciones actuales.</p>
+		<button class="uk-button uk-button-primary" (click)="exportar()">Exportar XML</button>
+	</div>
+
+	<div class="uk-card uk-card-default uk-card-body uk-margin">
+		<h3 class="uk-card-title">Importar</h3>
+		<p>Sube un XML previamente exportado para cargar datos.</p>
+		<input class="uk-input" type="file" accept=".xml" (change)="onFileChange($event)" [disabled]="subiendo">
+		<div *ngIf="subiendo" class="uk-alert-primary uk-margin-small" uk-alert>
+			<p>Procesando archivo…</p>
+		</div>
+
+		<div *ngIf="resultado" class="uk-alert-success uk-margin-small" uk-alert>
+			<p>
+				Usuarios OK: {{ resultado.usuarios_procesados }}, Reservas OK: {{ resultado.reservaciones_procesadas }},
+				Tiempo: {{ resultado.tiempo_procesamiento }} ms
+			</p>
+		</div>
+		<div *ngIf="errores?.length" class="uk-alert-danger uk-margin-small" uk-alert>
+			<p>Errores ({{ errores.length }}):</p>
+			<ul class="uk-list uk-list-disc">
+				<li *ngFor="let e of errores">{{ e }}</li>
+			</ul>
+		</div>
+	</div>
+</div>

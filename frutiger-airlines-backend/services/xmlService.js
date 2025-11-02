@@ -1,5 +1,5 @@
 import { create } from 'xmlbuilder2';
-import { query } from '../db.js';
+import pool, { query } from '../db.js';
 import { parseStringPromise } from 'xml2js';
 import bcrypt from 'bcryptjs';
 
@@ -65,11 +65,19 @@ export const exportarDatosXML = async () => {
 
     // <Usuarios>
     const usuariosNode = root.ele('Usuarios');
+    const fmt = (d) => {
+      if (!d) return '';
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? '' : dt.toLocaleString('es-GT');
+    };
     for (const user of usuariosRes.rows) {
-      usuariosNode.ele('Usuario', { email: user.email, esVip: user.esVip.toString() })
-        .ele('nombreCompleto').txt(user.nombre_completo).up()
-        .ele('fechaCreacion').txt(new Date(user.fecha_creacion).toLocaleString('es-GT')).up() // Formato DD/MM/YYYY:HH:MM:SS
-      .up();
+      // Nota: Postgres convierte alias no-quoted a minúsculas. "AS esVip" llega como user.esvip
+      const esVipBool = Boolean(user.esvip ?? user.es_vip ?? user.esVip ?? false);
+      usuariosNode
+        .ele('Usuario', { email: user.email, esVip: esVipBool.toString() })
+          .ele('nombreCompleto').txt(user.nombre_completo || '').up()
+          .ele('fechaCreacion').txt(fmt(user.fecha_creacion)).up()
+        .up();
     }
 
     // <Asientos>
@@ -89,24 +97,24 @@ export const exportarDatosXML = async () => {
       resNode.ele('usuario').txt(res.usuario_email).up();
       resNode.ele('asiento').txt(res.numero_asiento).up();
       resNode.ele('pasajero')
-        .ele('nombreCompleto').txt(res.nombre_pasajero).up()
-        .ele('cui').txt(res.cui_pasajero).up()
-        .ele('tieneEquipaje').txt(res.tiene_equipaje.toString()).up()
+        .ele('nombreCompleto').txt(res.nombre_pasajero || '').up()
+        .ele('cui').txt(res.cui_pasajero || '').up()
+        .ele('tieneEquipaje').txt(Boolean(res.tiene_equipaje).toString()).up()
       .up();
       resNode.ele('detalles')
-        .ele('fechaReservacion').txt(new Date(res.fecha_reservacion).toLocaleString('es-GT')).up()
-        .ele('metodoSeleccion').txt(res.metodo_seleccion).up()
-        .ele('precioBase').txt(res.precio_base).up()
-        .ele('precioTotal').txt(res.precio_total).up()
+        .ele('fechaReservacion').txt(fmt(res.fecha_reservacion)).up()
+        .ele('metodoSeleccion').txt(res.metodo_seleccion || '').up()
+        .ele('precioBase').txt(res.precio_base != null ? String(res.precio_base) : '').up()
+        .ele('precioTotal').txt(res.precio_total != null ? String(res.precio_total) : '').up()
       .up();
 
       // Modificaciones
-      if (res.modificaciones && res.modificaciones.length > 0) {
+      if (Array.isArray(res.modificaciones) && res.modificaciones.length > 0) {
         const modsNode = resNode.ele('Modificaciones');
         for (const mod of res.modificaciones) {
           modsNode.ele('Modificacion')
-            .ele('fecha').txt(new Date(mod.fecha).toLocaleString('es-GT')).up()
-            .ele('recargo').txt(mod.recargo).up()
+            .ele('fecha').txt(fmt(mod.fecha)).up()
+            .ele('recargo').txt(mod.recargo != null ? String(mod.recargo) : '0').up()
             .ele('descripcion').txt('Modificación registrada.').up() // El XML de ejemplo tenía descripción
           .up();
         }

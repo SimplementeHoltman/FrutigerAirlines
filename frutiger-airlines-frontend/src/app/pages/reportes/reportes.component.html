@@ -1,1 +1,75 @@
-<p>Reportes (placeholder)</p>
+<app-navegacion></app-navegacion>
+
+<div class="uk-container uk-margin-top">
+	<h2>Reportes</h2>
+
+	<div *ngIf="cargando" class="uk-alert-primary" uk-alert>
+		<p>Cargando reportes…</p>
+	</div>
+
+		<div uk-grid class="uk-grid-small">
+		<div class="uk-width-1-2@m">
+			<div class="uk-card uk-card-default uk-card-body">
+				<h3 class="uk-card-title">Diagrama general de asientos</h3>
+				<div *ngIf="diagrama; else diagEmpty">
+						<p><strong>Total asientos</strong>: Negocios {{ totales.asientosNegocios }}, Económica {{ totales.asientosEconomica }}</p>
+						<p><strong>Estado total</strong>: Ocupados {{ diagrama.total_ocupados }}, Libres {{ diagrama.total_libres }}</p>
+						<p class="uk-text-meta">Los detalles por clase aparecen en la sección Estadísticas.</p>
+				</div>
+				<ng-template #diagEmpty>
+					<p class="uk-text-muted">Sin datos.</p>
+				</ng-template>
+			</div>
+		</div>
+
+		<div class="uk-width-1-2@m">
+			<div class="uk-card uk-card-default uk-card-body">
+				<h3 class="uk-card-title">Estadísticas</h3>
+				<div *ngIf="estadisticas; else statsEmpty">
+					<ul class="uk-list uk-list-striped">
+						<li>Usuarios creados: {{ estadisticas.total_usuarios }}</li>
+						<li>Reservas totales: {{ estadisticas.total_reservaciones }}</li>
+						<li>Reservas activas: {{ estadisticas.reservaciones_activas }}</li>
+						<li>Reservas canceladas: {{ estadisticas.reservaciones_canceladas }}</li>
+						<li>Ocupados (Negocios): {{ estadisticas.asientos_ocupados_negocios }} / Libres: {{ estadisticas.asientos_libres_negocios }}</li>
+						<li>Ocupados (Económica): {{ estadisticas.asientos_ocupados_economica }} / Libres: {{ estadisticas.asientos_libres_economica }}</li>
+						<li>Seleccionados manualmente: {{ estadisticas.seleccion_manual }}</li>
+						<li>Seleccionados aleatoriamente: {{ estadisticas.seleccion_aleatoria }}</li>
+					</ul>
+				</div>
+				<ng-template #statsEmpty>
+					<p class="uk-text-muted">Sin datos.</p>
+				</ng-template>
+			</div>
+		</div>
+
+		<div class="uk-width-1-1">
+			<div class="uk-card uk-card-default uk-card-body">
+				<h3 class="uk-card-title">Reservas por usuario</h3>
+				<table class="uk-table uk-table-divider uk-table-small" *ngIf="porUsuario?.length; else perUserEmpty">
+					<thead>
+						<tr>
+							<th>Usuario</th>
+							<th>Email</th>
+							<th>Total</th>
+							<th>Activas</th>
+							<th>VIP</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr *ngFor="let u of porUsuario">
+							<td>{{ u.nombre_completo }}</td>
+							<td>{{ u.email }}</td>
+							<td>{{ u.total_reservaciones }}</td>
+							<td>{{ u.reservaciones_activas }}</td>
+							<td>{{ u.es_vip ? 'Sí' : 'No' }}</td>
+						</tr>
+					</tbody>
+				</table>
+				<ng-template #perUserEmpty>
+					<p class="uk-text-muted">Sin datos.</p>
+				</ng-template>
+			</div>
+		</div>
+	</div>
+</div>
