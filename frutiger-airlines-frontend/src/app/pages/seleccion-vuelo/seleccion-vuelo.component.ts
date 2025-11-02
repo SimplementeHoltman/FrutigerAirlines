@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Asiento } from '../../interfaces/asiento.interface';
 import { AsientoService } from '../../services/asiento.service';
@@ -16,7 +16,7 @@ type AsientosAgrupados = { [fila: string]: Asiento[] };
 @Component({
   selector: 'app-seleccion-vuelo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NavegacionComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NavegacionComponent],
   templateUrl: './seleccion-vuelo.component.html',
   styleUrls: ['./seleccion-vuelo.component.css']
 })
@@ -38,6 +38,12 @@ export class SeleccionVueloComponent implements OnInit {
   exitoReserva = '';
   isVip = false;
   vipDescuento = 0;
+  // Selección aleatoria
+  cantidadAleatoria: number = 1;
+  seleccionFueAleatoria: boolean = false;
+  avisoAleatorio: string = '';
+  incluirNegocios: boolean = true;
+  incluirEconomica: boolean = true;
 
   constructor(
     private asientoService: AsientoService,
@@ -105,6 +111,8 @@ export class SeleccionVueloComponent implements OnInit {
       this.seleccion.push(asiento);
       this.pasajerosArray.push(this.crearFormGroupPasajero(asiento));
       this.cuiErrores.push(''); // Espacio para error de CUI
+      // Si el usuario agregó manualmente, lo marcamos como selección manual
+      this.seleccionFueAleatoria = false;
     }
   }
 
@@ -121,6 +129,63 @@ export class SeleccionVueloComponent implements OnInit {
       cui_pasajero: ['', [Validators.required, Validators.pattern('^[0-9]{13}$')]],
       tiene_equipaje: [false]
     });
+  }
+
+  // Selección aleatoria de asientos libres
+  seleccionarAleatorio() {
+    this.avisoAleatorio = '';
+    const libres: Asiento[] = [];
+    const agregar = (dic: { [fila: string]: Asiento[] }) => {
+      Object.keys(dic).forEach(f => {
+        dic[f].forEach(a => {
+          const yaSeleccionado = this.seleccion.some(s => s.asiento_id === a.asiento_id);
+          if (a.estado === 'Libre' && !yaSeleccionado) libres.push(a);
+        });
+      });
+    };
+    if (this.incluirNegocios) agregar(this.asientosNegocios);
+    if (this.incluirEconomica) agregar(this.asientosEconomica);
+
+    if (!this.incluirNegocios && !this.incluirEconomica) {
+      this.avisoAleatorio = 'Selecciona al menos una clase (Negocios o Económica).';
+      return;
+    }
+
+    if (libres.length === 0) {
+      this.avisoAleatorio = 'No hay asientos libres disponibles.';
+      return;
+    }
+
+    // Normalizar cantidad solicitada y no exceder los disponibles
+    const solicitados = Math.max(1, Math.floor(this.cantidadAleatoria || 1));
+    const n = Math.min(solicitados, libres.length);
+    if (solicitados > libres.length) {
+      this.avisoAleatorio = `Solo hay ${libres.length} asiento(s) disponible(s) en la(s) clase(s) seleccionada(s). Se ajustó la cantidad a ${n}.`;
+      this.cantidadAleatoria = n;
+    }
+    // Mezclar aleatoriamente (Fisher-Yates simplificado usando sort para simplicidad)
+    const seleccionados = [...libres].sort(() => Math.random() - 0.5).slice(0, n);
+
+    for (const asiento of seleccionados) {
+      // Evitar duplicados por seguridad
+      if (!this.seleccion.some(s => s.asiento_id === asiento.asiento_id)) {
+        this.seleccion.push(asiento);
+        this.pasajerosArray.push(this.crearFormGroupPasajero(asiento));
+        this.cuiErrores.push('');
+      }
+    }
+
+    this.seleccionFueAleatoria = true;
+    this.avisoAleatorio = `Se seleccionaron aleatoriamente ${seleccionados.length} asiento(s).`;
+  }
+
+  limpiarSeleccion() {
+    this.pasajerosArray.clear();
+    this.seleccion = [];
+    this.cuiErrores = [];
+    this.errorReserva = '';
+    this.exitoReserva = '';
+    this.seleccionFueAleatoria = false;
   }
 
   // Lógica de confirmación de reserva
@@ -156,7 +221,8 @@ export class SeleccionVueloComponent implements OnInit {
     }
 
     // 2. Si todos los CUIs son válidos, enviar la reserva
-    this.reservacionService.crearReservacion(pasajerosData, 'Manual').subscribe({
+    const metodo: 'Manual' | 'Aleatorio' = this.seleccionFueAleatoria ? 'Aleatorio' : 'Manual';
+    this.reservacionService.crearReservacion(pasajerosData, metodo).subscribe({
       next: (response) => {
         const vipMsg = this.isVip ? ` (incluye descuento VIP ${this.vipDescuento || 10}%)` : '';
         this.exitoReserva = `¡Reserva confirmada! Total: Q${response.precioTotal}${vipMsg}. Serás redirigido a 'Mis Reservas'.`;

@@ -8,6 +8,28 @@
     <p>Eres usuario VIP. Descuento activo: {{ vipDescuento || 10 }}% en el precio de tus asientos.</p>
   </div>
 
+  <div class="uk-card uk-card-default uk-card-body uk-margin-small">
+    <div class="uk-grid-small" uk-grid>
+      <div class="uk-width-1-2@s uk-flex uk-flex-middle uk-flex-wrap">
+        <label class="uk-margin-small-right">Clases:</label>
+        <label class="uk-margin-small-right"><input class="uk-checkbox" type="checkbox" [(ngModel)]="incluirNegocios"> Negocios</label>
+        <label class="uk-margin-small-right"><input class="uk-checkbox" type="checkbox" [(ngModel)]="incluirEconomica"> Económica</label>
+        <span class="uk-margin-small-left uk-text-meta">(marca una o ambas)</span>
+      </div>
+      <div class="uk-width-1-2@s uk-flex uk-flex-middle">
+        <label class="uk-margin-small-right">Cantidad aleatoria:</label>
+        <input class="uk-input uk-form-width-small" type="number" min="1" [(ngModel)]="cantidadAleatoria">
+        <button class="uk-button uk-button-secondary uk-margin-small-left" (click)="seleccionarAleatorio()">Seleccionar aleatoriamente</button>
+        <button class="uk-button uk-button-default uk-margin-small-left" (click)="limpiarSeleccion()">Limpiar selección</button>
+      </div>
+      <div class="uk-width-1-1">
+        <div *ngIf="avisoAleatorio" class="uk-alert-primary uk-margin-remove" uk-alert>
+          <p class="uk-margin-remove">{{ avisoAleatorio }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div uk-grid>
     <div class="uk-width-2-3@m">
       <div class="uk-card uk-card-default uk-card-body uk-text-center">
