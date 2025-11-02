@@ -16,16 +16,18 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  loginError = '';
-  registerError = '';
-  registerSuccess = '';
+  // Mensaje general (inline alert)
+  errorMessage: string | null = null;
+  successMessage: string | null = null;
+
+  // Errores por campo que vienen del servidor
+  serverFieldErrors: { [field: string]: string } = {};
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
   ) {
-    // Si ya está logueado, que vaya al Home
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/']);
     }
@@ -44,45 +46,192 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  // Muestra un mensaje inline (error o success). Si timeout > 0 lo oculta automáticamente.
+  private showInlineMessage(message: string, type: 'error' | 'success' = 'error', timeout = 6000) {
+    if (type === 'error') {
+      this.errorMessage = message;
+      this.successMessage = null;
+    } else {
+      this.successMessage = message;
+      this.errorMessage = null;
+    }
+    if (timeout > 0) {
+      setTimeout(() => {
+        this.errorMessage = null;
+        this.successMessage = null;
+      }, timeout);
+    }
+  }
+
+  // Intenta extraer y normalizar el body de error del HttpErrorResponse
+  private async extractErrorBody(err: any): Promise<any> {
+    try {
+      // err.error puede ser:
+      // - un objeto ya parseado { message: '...' }
+      // - una cadena
+      // - un Blob (cuando backend no setea Content-Type application/json)
+      const body = err?.error;
+      if (!body) return { message: err?.message ?? 'Error desconocido', status: err?.status };
+
+      if (typeof body === 'object') {
+        return body;
+      }
+
+      if (typeof body === 'string') {
+        // intentar parsear JSON de la cadena, si es posible
+        try {
+          return JSON.parse(body);
+        } catch (_) {
+          return { message: body };
+        }
+      }
+
+      // Si es Blob (por ejemplo cuando backend responde texto pero HttpClient lo devuelve como Blob)
+      if (body instanceof Blob) {
+        const text = await new Response(body).text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          return { message: text };
+        }
+      }
+
+      return { message: String(body) };
+    } catch (e) {
+      console.error('extractErrorBody fallo', e);
+      return { message: 'Error al procesar la respuesta del servidor.' };
+    }
+  }
+
+  // Procesa errores genéricos o por campo que devuelva la API
+  private async handleApiError(err: any, fallback = 'Ocurrió un error') {
+    this.serverFieldErrors = {};
+    try {
+      const body = await this.extractErrorBody(err);
+
+      // Manejar arrays de errores { errors: [{ field, message }] }
+      if (body?.errors && Array.isArray(body.errors)) {
+        const messages: string[] = [];
+        for (const e of body.errors) {
+          if (e.field) {
+            this.serverFieldErrors[e.field] = e.message || String(e);
+            const ctrl = this.getControlByFieldName(e.field);
+            if (ctrl) ctrl.setErrors({ server: e.message || true });
+          } else {
+            messages.push(e.message || String(e));
+          }
+        }
+        if (messages.length > 0) {
+          this.showInlineMessage(messages.join('; '));
+        } else {
+          this.showInlineMessage('Hay errores en algunos campos. Revísalos.', 'error');
+        }
+        return;
+      }
+
+      // Manejar objeto fieldErrors: { field: message, ... }
+      if (body?.fieldErrors && typeof body.fieldErrors === 'object') {
+        const messages: string[] = [];
+        for (const k of Object.keys(body.fieldErrors)) {
+          this.serverFieldErrors[k] = body.fieldErrors[k];
+          const ctrl = this.getControlByFieldName(k);
+          if (ctrl) ctrl.setErrors({ server: body.fieldErrors[k] });
+          messages.push(body.fieldErrors[k]);
+        }
+        this.showInlineMessage(messages.join('; '));
+        return;
+      }
+
+      // Mensaje simple { message: '...' }
+      if (body?.message) {
+        this.showInlineMessage(body.message);
+        return;
+      }
+
+      // Si hay status (ej. 401), mostrar mensaje por defecto con status
+      if (err?.status) {
+        const statusMsg = `Error ${err.status}: ${err.statusText || 'Error de servidor'}`;
+        this.showInlineMessage(body?.message ? `${body.message} (${statusMsg})` : statusMsg);
+        return;
+      }
+
+      // Fallback genérico
+      this.showInlineMessage(fallback);
+    } catch (e) {
+      console.error('handleApiError fallo', e);
+      this.showInlineMessage(fallback);
+    }
+  }
+
+  // Helper: intenta obtener control por nombres comunes de campo
+  private getControlByFieldName(field: string) {
+    if (this.loginForm.contains(field)) return this.loginForm.get(field);
+    if (this.registerForm.contains(field)) return this.registerForm.get(field);
+    const map: { [k: string]: { form: FormGroup, name: string } } = {
+      nombre: { form: this.registerForm, name: 'nombreCompleto' },
+      nombreCompleto: { form: this.registerForm, name: 'nombreCompleto' },
+      email: { form: this.loginForm, name: 'email' },
+      contrasena: { form: this.loginForm, name: 'password' },
+      password: { form: this.loginForm, name: 'password' },
+    };
+    if (map[field]) return map[field].form.get(map[field].name);
+    return null;
+  }
+
+  // Permite cerrar manualmente el alert inline
+  closeAlert() {
+    this.errorMessage = null;
+    this.successMessage = null;
+  }
+
+  // LOGIN
   onLogin() {
-    if (this.loginForm.invalid) return;
-    this.loginError = '';
+    if (this.loginForm.invalid) {
+      this.showInlineMessage('Por favor completa los campos del formulario.');
+      return;
+    }
+    this.errorMessage = null;
+    this.serverFieldErrors = {};
 
     const { email, password } = this.loginForm.value;
 
     this.authService.login(email, password).subscribe({
       next: (response) => {
-        // Login exitoso, el servicio Auth se encarga de guardar
-        // y el AuthGuard nos llevará al home.
-        console.log('Login exitoso:', response.usuario);
-        this.router.navigate(['/']); // Redirigir a la página principal
+        // Guardado en AuthService (realizado por el service), navegar al home
+        this.showInlineMessage('Inicio de sesión correcto', 'success', 1500);
+        this.router.navigate(['/']);
       },
-      error: (err) => {
-        console.error('Error de login:', err);
-        this.loginError = err.error?.message || 'Credenciales inválidas.';
+      error: async (err) => {
+        console.error('Error de login (raw):', err);
+        // Manejo robusto que mostrará mensaje aunque la API no devuelva JSON
+        await this.handleApiError(err, 'Credenciales inválidas.');
       }
     });
   }
 
+  // REGISTER
   onRegister() {
+    // marcar todos los controles como touched para que se muestren los errores de validación cliente
+    this.registerForm.markAllAsTouched();
+
     if (this.registerForm.invalid) {
-      this.registerError = 'Por favor, corrige los campos del formulario.';
+      this.showInlineMessage('Por favor, corrige los campos del formulario.');
       return;
     }
 
-    this.registerError = '';
-    this.registerSuccess = '';
+    this.serverFieldErrors = {};
     const { nombreCompleto, email, password } = this.registerForm.value;
 
     this.authService.register(nombreCompleto, email, password).subscribe({
       next: (response) => {
-        this.registerSuccess = '¡Registro exitoso! Ahora puedes iniciar sesión.';
+        this.showInlineMessage('Registro exitoso. Ya puedes iniciar sesión.', 'success', 4000);
         this.registerForm.reset();
       },
-      error: (err) => {
-        console.error('Error de registro:', err);
-        this.registerError = err.error?.message || 'Error al registrar la cuenta.';
+      error: async (err) => {
+        console.error('Error de registro (raw):', err);
+        await this.handleApiError(err, 'Error al registrar la cuenta.');
       }
     });
   }
+
 }

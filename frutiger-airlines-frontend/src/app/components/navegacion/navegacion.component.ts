@@ -13,12 +13,14 @@ import { AuthService } from '../../services/auth.service';
 export class NavegacionComponent {
   isLoggedIn = false;
   userName = '';
+  isVip = false;
 
   constructor(private authService: AuthService) {
     // Nos suscribimos a los cambios del usuario
     this.authService.currentUser$.subscribe(user => {
       this.isLoggedIn = !!user;
       this.userName = user ? user.nombre_completo : '';
+      this.isVip = !!(user?.isVip || user?.vipInfo?.es_vip);
     });
   }
 

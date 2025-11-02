@@ -18,6 +18,10 @@ const pool = new Pool({
 
 pool.on('connect', () => {
   console.log('Conectado a la base de datos PostgreSQL.');
+  // Asegurar columna compra_id para agrupar asientos por compra
+  pool
+    .query("ALTER TABLE IF EXISTS reservaciones ADD COLUMN IF NOT EXISTS compra_id TEXT")
+    .catch(err => console.warn('Aviso: no se pudo asegurar columna compra_id:', err?.message));
 });
 
 // Función para hacer consultas

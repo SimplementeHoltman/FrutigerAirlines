@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool, { query } from '../db.js';
+import { randomUUID } from 'crypto';
 import { validarCUI } from '../services/cuiService.js';
 import { sendEmail, getReservationEmail, getModificationEmail, getCancellationEmail } from '../services/emailService.js';
 
@@ -16,18 +17,31 @@ router.post('/', async (req, res) => {
   const client = await pool.connect();
   const reservacionesCreadas = [];
   let precioTotalCompra = 0;
+  const compraId = randomUUID();
 
   try {
     await client.query('BEGIN');
 
     // 1. Obtener datos del usuario y estado VIP
-    const userRes = await client.query('SELECT *, (SELECT COUNT(*) FROM reservaciones r WHERE r.usuario_id = u.usuario_id AND r.estado = \'ACTIVA\') AS total_reservas FROM usuarios u WHERE u.usuario_id = $1', [usuario_id]);
+    // total_reservas debe contabilizar compras (no asientos): usamos COUNT DISTINCT por instante de creación
+    const userRes = await client.query(
+      `SELECT *,
+        (SELECT COUNT(DISTINCT COALESCE(
+             r.compra_id,
+             to_char(date_trunc('second', r.fecha_reservacion), 'YYYY-MM-DD"T"HH24:MI:SS')
+           ))
+           FROM reservaciones r
+          WHERE r.usuario_id = u.usuario_id AND r.estado = 'ACTIVA') AS total_reservas
+       FROM usuarios u
+      WHERE u.usuario_id = $1`,
+      [usuario_id]
+    );
     if (userRes.rows.length === 0) {
       throw new Error('Usuario no encontrado.');
     }
     const usuario = userRes.rows[0];
-    // VIP si tiene 5 o más reservas *antes* de esta compra
-    const esVip = usuario.total_reservas >= 5;
+  // VIP si tiene 5 o más COMPRAS (reservaciones realizadas) antes de esta compra
+  const esVip = Number(usuario.total_reservas) >= 5;
 
     for (const item of asientos) {
       const { asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje } = item;
@@ -65,10 +79,10 @@ router.post('/', async (req, res) => {
 
       // 5. Insertar reservación
       const newRes = await client.query(
-        `INSERT INTO reservaciones (usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, metodo_seleccion, precio_base, precio_total, estado)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVA')
+        `INSERT INTO reservaciones (usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, metodo_seleccion, precio_base, precio_total, estado, compra_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVA', $9)
          RETURNING *, (SELECT numero_asiento FROM asientos WHERE asiento_id = $2) as numero_asiento`,
-        [usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, metodo_seleccion, precio_base, precio_total]
+        [usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, metodo_seleccion, precio_base, precio_total, compraId]
       );
 
       const reservacionInfo = { ...newRes.rows[0], clase_asiento };

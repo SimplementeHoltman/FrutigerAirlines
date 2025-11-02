@@ -1,5 +1,15 @@
+<!-- Mensaje global inline (no modal) -->
+<div *ngIf="errorMessage" class="uk-alert-danger uk-margin" uk-alert>
+  <a class="uk-alert-close" (click)="closeAlert()"></a>
+  <p class="uk-text-small">{{ errorMessage }}</p>
+</div>
+<div *ngIf="successMessage" class="uk-alert-success uk-margin" uk-alert>
+  <a class="uk-alert-close" (click)="closeAlert()"></a>
+  <p class="uk-text-small">{{ successMessage }}</p>
+</div>
+
 <div class="uk-flex uk-flex-center uk-flex-middle uk-height-viewport-minus-top">
-  <div class="uk-width-1-2@m">
+  <div class="uk-width-1-1 uk-padding uk-width-5-6@s uk-width-2-3@m uk-width-1-2@l">
     <div uk-grid class="uk-grid-match">
 
       <div class="uk-width-1-2@m">
@@ -12,12 +22,18 @@
                 <span class="uk-form-icon" uk-icon="icon: mail"></span>
                 <input class="uk-input" type="email" placeholder="Email" formControlName="email" required>
               </div>
+              <div *ngIf="loginForm.get('email')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-top">
+                {{ loginForm.get('email')?.errors?.['server'] }}
+              </div>
             </div>
 
             <div class="uk-margin">
               <div class="uk-inline uk-width-1-1">
                 <span class="uk-form-icon" uk-icon="icon: lock"></span>
                 <input class="uk-input" type="password" placeholder="Contraseña" formControlName="password" required>
+              </div>
+              <div *ngIf="loginForm.get('password')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-top">
+                {{ loginForm.get('password')?.errors?.['server'] }}
               </div>
             </div>
 
@@ -27,47 +43,64 @@
               </button>
             </div>
 
-            <div *ngIf="loginError" class="uk-alert-danger" uk-alert>
-              <p>{{ loginError }}</p>
-            </div>
           </form>
         </div>
       </div>
 
-      <div class="uk-width-1-2@m">
-        <div class="uk-card uk-card-default uk-card-body uk-box-shadow-large">
-          <h3 class="uk-card-title uk-text-center">Registro</h3>
-          <p class="uk-text-center uk-text-small">Solo correos @gmail.com y @outlook.com</p>
-          <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+<div class="uk-width-1-2@m">
+  <div class="uk-card uk-card-default uk-card-body uk-box-shadow-large">
+    <h3 class="uk-card-title uk-text-center">Registro</h3>
+    <p class="uk-text-center uk-text-small">Solo correos @gmail.com y @outlook.com</p>
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
 
-            <div class="uk-margin">
-              <input class="uk-input" type="text" placeholder="Nombre Completo" formControlName="nombreCompleto" required>
-            </div>
-
-            <div class="uk-margin">
-              <input class="uk-input" type="email" placeholder="Email" formControlName="email" required>
-            </div>
-
-            <div class="uk-margin">
-              <input class="uk-input" type="password" placeholder="Contraseña (min. 6 car.)" formControlName="password" required>
-            </div>
-
-            <div class="uk-margin">
-              <button class="uk-button uk-button-secondary uk-width-1-1" type="submit" [disabled]="registerForm.invalid">
-                Registrarme
-              </button>
-            </div>
-
-            <div *ngIf="registerError" class="uk-alert-danger" uk-alert>
-              <p>{{ registerError }}</p>
-            </div>
-            <div *ngIf="registerSuccess" class="uk-alert-success" uk-alert>
-              <p>{{ registerSuccess }}</p>
-            </div>
-
-          </form>
+      <div class="uk-margin">
+        <input class="uk-input" type="text" placeholder="Nombre Completo" formControlName="nombreCompleto" required>
+        <div *ngIf="registerForm.get('nombreCompleto')?.touched && registerForm.get('nombreCompleto')?.hasError('required')" class="uk-text-danger uk-text-small uk-margin-top">
+          El nombre es obligatorio.
+        </div>
+        <div *ngIf="registerForm.get('nombreCompleto')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-top">
+          {{ registerForm.get('nombreCompleto')?.errors?.['server'] }}
         </div>
       </div>
+
+      <div class="uk-margin">
+        <input class="uk-input" type="email" placeholder="Email" formControlName="email" required>
+        <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('required')" class="uk-text-danger uk-text-small uk-margin-top">
+          El email es obligatorio.
+        </div>
+        <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('email')" class="uk-text-danger uk-text-small uk-margin-top">
+          Formato de email inválido.
+        </div>
+        <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('pattern')" class="uk-text-danger uk-text-small uk-margin-top">
+          Solo se permiten correos @gmail.com o @outlook.com.
+        </div>
+        <div *ngIf="registerForm.get('email')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-top">
+          {{ registerForm.get('email')?.errors?.['server'] }}
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <input class="uk-input" type="password" placeholder="Contraseña (min. 6 car.)" formControlName="password" required>
+        <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('required')" class="uk-text-danger uk-text-small uk-margin-top">
+          La contraseña es obligatoria.
+        </div>
+        <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('minlength')" class="uk-text-danger uk-text-small uk-margin-top">
+          La contraseña debe tener al menos 6 caracteres.
+        </div>
+        <div *ngIf="registerForm.get('password')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-top">
+          {{ registerForm.get('password')?.errors?.['server'] }}
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <button class="uk-button uk-button-secondary uk-width-1-1" type="submit" [disabled]="registerForm.invalid">
+          Registrarme
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
 
     </div>
   </div>

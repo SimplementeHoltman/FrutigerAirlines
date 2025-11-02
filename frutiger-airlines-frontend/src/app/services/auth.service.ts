@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { VipService, VipStatusResponse } from './vip.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,11 +14,16 @@ export class AuthService {
 
   private apiUrl = '/api/auth'; // El proxy lo redirige a localhost:3000
 
-  constructor(private http: HttpClient, private router: Router) {
+  constructor(private http: HttpClient, private router: Router, private vipService: VipService) {
     // Intentar cargar usuario desde localStorage al iniciar
     const user = localStorage.getItem('frutiger_user');
     if (user) {
-      this.currentUserSubject.next(JSON.parse(user));
+      const parsed = JSON.parse(user);
+      this.currentUserSubject.next(parsed);
+      // Refrescar estado VIP en segundo plano
+      if (parsed?.usuario_id) {
+        this.actualizarVip(parsed.usuario_id);
+      }
     }
   }
 
@@ -34,8 +40,12 @@ export class AuthService {
       .pipe(
         tap(response => {
           // Guardar usuario en localStorage y en el Subject
-          localStorage.setItem('frutiger_user', JSON.stringify(response.usuario));
-          this.currentUserSubject.next(response.usuario);
+          const user = response.usuario;
+          localStorage.setItem('frutiger_user', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+          if (user?.usuario_id) {
+            this.actualizarVip(user.usuario_id);
+          }
         })
       );
   }
@@ -48,5 +58,19 @@ export class AuthService {
     localStorage.removeItem('frutiger_user');
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
+  }
+
+  private actualizarVip(usuarioId: number | string) {
+    this.vipService.getVipStatus(usuarioId).subscribe({
+      next: (vip: VipStatusResponse) => {
+        const curr = this.currentUserSubject.value || {};
+        const actualizado = { ...curr, isVip: !!vip.es_vip, vipInfo: vip };
+        this.currentUserSubject.next(actualizado);
+        localStorage.setItem('frutiger_user', JSON.stringify(actualizado));
+      },
+      error: () => {
+        // Silencioso: no bloquear la UX si falla VIP
+      }
+    });
   }
 }

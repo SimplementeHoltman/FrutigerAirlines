@@ -1,8 +1,15 @@
+<app-navegacion></app-navegacion>
+
 <div class="uk-container uk-container-small uk-margin-top">
   <section class="uk-section">
     <div class="uk-text-center uk-margin-large-bottom">
-      <h1 class="uk-heading-medium" style="color: var(--color-secundario);">¡Bienvenido, {{ userName }}!</h1>
+      <h1 class="uk-heading-medium" style="color: var(--color-secundario);">¡Bienvenido, {{ userName }}!
+        <span *ngIf="isVip" class="uk-label uk-label-warning" style="margin-left:8px;">VIP</span>
+      </h1>
       <p class="uk-text-lead">Selecciona una opción para comenzar. Puedes volver aquí en cualquier momento desde el menú.</p>
+      <div *ngIf="isVip" class="uk-alert-primary uk-margin-small-top" uk-alert>
+        <p>Gracias por ser cliente VIP. Descuento aplicable: 10% en tus reservas.</p>
+      </div>
     </div>
 
     <div uk-grid="true" class="uk-child-width-1-1 uk-child-width-1-2@s uk-grid-small uk-grid-match">

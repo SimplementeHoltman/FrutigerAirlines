@@ -1,1 +1,126 @@
-<p>Mis Reservas (placeholder)</p>
+<app-navegacion></app-navegacion>
+
+<div class="uk-container">
+  <h1>Mis Reservas</h1>
+
+  <div *ngIf="loading" class="uk-text-center uk-margin">
+    <div uk-spinner></div>
+    <p>Cargando reservaciones...</p>
+  </div>
+
+  <div *ngIf="error" class="uk-alert-danger" uk-alert>
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="success" class="uk-alert-success" uk-alert>
+    <p>{{ success }}</p>
+  </div>
+
+  <div *ngIf="!loading && reservaciones.length === 0" class="uk-text-muted uk-text-center">
+    <p>No tienes reservaciones activas.</p>
+  </div>
+
+  <div *ngFor="let r of reservaciones" class="uk-card uk-card-default uk-card-body uk-margin">
+    <div class="uk-grid-small uk-flex-middle@s" uk-grid>
+      
+      <div class="uk-width-1-1 uk-width-expand@s">
+        <h3 class="uk-card-title">Reservación #{{ r.reservacion_id ?? r.id }}</h3>
+        <p class="uk-text-small uk-text-muted">Fecha: {{ r.fecha_reservacion || r.created_at || 'N/A' }}</p>
+        <p><strong>Total:</strong> Q{{ r.precio_total ?? r.precioTotal ?? r.total ?? 'N/A' }}</p>
+        <p><strong>Pasajero:</strong> {{ obtenerPasajerosTexto(r) }}</p>
+        <p *ngIf="r.estado"><strong>Estatus:</strong> {{ r.estado }}</p>
+      </div>
+      
+      <div class="uk-width-1-1 uk-width-auto@s uk-margin-top uk-margin-remove-top@s">
+        
+        <div class="uk-grid-small uk-child-width-1-1 uk-child-width-auto@s uk-flex-center uk-flex-right@s" uk-grid>
+          <div>
+            <button class="uk-button uk-button-default uk-width-1-1" (click)="toggleModificar(r)">
+              {{ mostrarModificar[r.reservacion_id ?? r.id] ? 'Cerrar' : 'Modificar Asiento' }}
+            </button>
+          </div>
+          <div>
+            <button class="uk-button uk-button-danger uk-width-1-1" (click)="cancelarReservacion(r)">
+              Cancelar
+            </button>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <div *ngIf="mostrarModificar[r.reservacion_id ?? r.id]" class="uk-margin-top">
+      <div class="uk-card uk-card-small uk-card-muted uk-card-body">
+        <h4 class="uk-margin-small">Elige un nuevo asiento (Clase: {{ r.clase_asiento ?? r.clase }})</h4>
+
+        <div *ngIf="!seatsCache[r.clase_asiento ?? r.clase]" class="uk-text-center uk-text-muted">
+          Cargando asientos...
+        </div>
+
+        <div *ngIf="seatsCache[r.clase_asiento ?? r.clase]" class="seats-diagram uk-overflow-auto">
+          <div *ngFor="let fila of (r.clase_asiento === 'Negocios' ? filasNegocios : filasEconomica)" class="seat-row">
+            <div class="row-label">{{ fila }}</div>
+            <div class="row-seats">
+              <div *ngFor="let asiento of (seatsCache[r.clase_asiento ?? r.clase][fila] || [])"
+                   class="seat"
+                   [ngClass]="{
+                     'estado-Libre': asiento.estado === 'Libre',
+                     'estado-Ocupado': asiento.estado === 'Ocupado',
+                     'estado-Actual': asiento.asiento_id == r.asiento_id,
+                     'estado-Seleccionado': estaSeleccionadoComoNuevo(r.reservacion_id ?? r.id, asiento)
+                   }"
+                   (click)="seleccionarNuevoAsiento(r, asiento)"
+                   [attr.aria-pressed]="estaSeleccionadoComoNuevo(r.reservacion_id ?? r.id, asiento) ? 'true' : 'false'">
+                {{ asiento.numero_asiento }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="uk-margin-top">
+          <ng-container *ngIf="modificarForms[r.reservacion_id ?? r.id] as form">
+            <form [formGroup]="form" (ngSubmit)="confirmarModificar(r)">
+              <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-3@s">
+                  <input class="uk-input" type="text" placeholder="CUI del pasajero (13 dígitos)" formControlName="cui_pasajero" maxlength="13">
+                  <div *ngIf="form.controls['cui_pasajero']?.touched && form.controls['cui_pasajero']?.invalid" class="uk-text-danger uk-text-small">
+                    CUI inválido (13 dígitos).
+                  </div>
+                </div>
+
+                <div class="uk-width-1-3@s">
+                  <div *ngIf="seleccionNuevoAsiento[r.reservacion_id ?? r.id] as nuevo">
+                    <p class="uk-text-small"><strong>Nuevo Asiento:</strong> {{ nuevo.numero_asiento }} (ID: {{ nuevo.asiento_id }})</p>
+                    <ng-container *ngIf="estimarRecargoYTotal(r, nuevo) as estimacion">
+                      <p class="uk-text-small">Recargo estimado: Q{{ estimacion.recargo | number:'1.2-2' }}</p>
+                      <p class="uk-text-small">Nuevo total estimado: Q{{ estimacion.nuevoTotal | number:'1.2-2' }}</p>
+                    </ng-container>
+                  </div>
+                  <div *ngIf="!seleccionNuevoAsiento[r.reservacion_id ?? r.id]" class="uk-text-small uk-text-muted">
+                    Selecciona un asiento libre para ver recargo y total.
+                  </div>
+                </div>
+
+                <div class="uk-width-1-3@s">
+                  <button class="uk-button uk-button-primary uk-width-1-1" type="submit" [disabled]="!seleccionNuevoAsiento[r.reservacion_id ?? r.id] || form.invalid || loading">
+                    Confirmar cambio
+                  </button>
+                </div>
+              </div>
+            </form>
+          </ng-container>
+
+          <div *ngIf="!modificarForms[r.reservacion_id ?? r.id]" class="uk-text-warning uk-text-small">
+            Formulario no disponible. Por favor actualiza la página.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="uk-margin-top">
+    <button class="uk-button uk-button-secondary" (click)="cargarReservaciones()" [disabled]="loading">Actualizar</button>
+  </div>
+</div>

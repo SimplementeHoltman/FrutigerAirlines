@@ -6,6 +6,9 @@ import { Asiento } from '../../interfaces/asiento.interface';
 import { AsientoService } from '../../services/asiento.service';
 import { CuiService } from '../../services/cui.service';
 import { ReservacionService } from '../../services/reservacion.service';
+import { NavegacionComponent } from '../../components/navegacion/navegacion.component'; // <-- importar aquí
+import { AuthService } from '../../services/auth.service';
+
 
 // Tipo para agrupar asientos por fila
 type AsientosAgrupados = { [fila: string]: Asiento[] };
@@ -13,7 +16,7 @@ type AsientosAgrupados = { [fila: string]: Asiento[] };
 @Component({
   selector: 'app-seleccion-vuelo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, NavegacionComponent],
   templateUrl: './seleccion-vuelo.component.html',
   styleUrls: ['./seleccion-vuelo.component.css']
 })
@@ -33,13 +36,16 @@ export class SeleccionVueloComponent implements OnInit {
   cuiErrores: string[] = [];
   errorReserva = '';
   exitoReserva = '';
+  isVip = false;
+  vipDescuento = 0;
 
   constructor(
     private asientoService: AsientoService,
     private reservacionService: ReservacionService,
     private cuiService: CuiService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     this.pasajerosForm = this.fb.group({
       pasajeros: this.fb.array([])
@@ -47,6 +53,13 @@ export class SeleccionVueloComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const user = this.authService.currentUserValue;
+    this.isVip = !!(user?.isVip || user?.vipInfo?.es_vip);
+    this.vipDescuento = user?.vipInfo?.descuento_aplicable ? (user.vipInfo.descuento_aplicable * 100) : 0;
+    this.authService.currentUser$.subscribe(u => {
+      this.isVip = !!(u?.isVip || u?.vipInfo?.es_vip);
+      this.vipDescuento = u?.vipInfo?.descuento_aplicable ? (u.vipInfo.descuento_aplicable * 100) : 0;
+    });
     this.cargarAsientos();
   }
 
@@ -145,7 +158,8 @@ export class SeleccionVueloComponent implements OnInit {
     // 2. Si todos los CUIs son válidos, enviar la reserva
     this.reservacionService.crearReservacion(pasajerosData, 'Manual').subscribe({
       next: (response) => {
-        this.exitoReserva = `¡Reserva confirmada! Total: Q${response.precioTotal}. Serás redirigido a 'Mis Reservas'.`;
+        const vipMsg = this.isVip ? ` (incluye descuento VIP ${this.vipDescuento || 10}%)` : '';
+        this.exitoReserva = `¡Reserva confirmada! Total: Q${response.precioTotal}${vipMsg}. Serás redirigido a 'Mis Reservas'.`;
 
         // Limpiar formulario y selección
         this.pasajerosArray.clear();

@@ -2,7 +2,7 @@
   <div class="uk-navbar-left">
     <a class="uk-navbar-item uk-logo" routerLink="/" style="color: #14C1FA;">FrutigerAirlines</a>
 
-    <ul class="uk-navbar-nav">
+    <ul class="uk-navbar-nav uk-visible@m">
       <li><a routerLink="/seleccionar-vuelo">Reservar</a></li>
       <li><a routerLink="/mis-reservas">Mis Reservas</a></li>
       <li><a routerLink="/reportes">Reportes</a></li>
@@ -11,13 +11,51 @@
   </div>
 
   <div class="uk-navbar-right">
-    <ul class="uk-navbar-nav">
+    <ul class="uk-navbar-nav uk-visible@m">
       <li>
         <a (click)="logout()">
           Cerrar Sesión ({{ userName }})
+          <span *ngIf="isVip" class="uk-label uk-label-warning uk-margin-small-left">VIP</span>
           <span uk-icon="icon: sign-out" class="uk-margin-small-left"></span>
         </a>
       </li>
     </ul>
+
+    <a class="uk-navbar-toggle uk-hidden@m" uk-navbar-toggle-icon uk-toggle="target: #offcanvas-nav-menu"></a>
+
   </div>
 </nav>
+
+<div id="offcanvas-nav-menu" uk-offcanvas="overlay: true" *ngIf="isLoggedIn">
+  <div class="uk-offcanvas-bar uk-flex uk-flex-column">
+
+    <button class="uk-offcanvas-close" type="button" uk-close></button>
+
+    <h3 class="uk-margin-remove-top" style="color: #14C1FA;">FrutigerAirlines</h3>
+
+    <ul class="uk-nav uk-nav-primary uk-nav-center uk-margin-auto-vertical">
+      
+      <li uk-toggle="target: #offcanvas-nav-menu">
+        <a routerLink="/seleccionar-vuelo">Reservar</a>
+      </li>
+      <li uk-toggle="target: #offcanvas-nav-menu">
+        <a routerLink="/mis-reservas">Mis Reservas</a>
+      </li>
+      <li uk-toggle="target: #offcanvas-nav-menu">
+        <a routerLink="/reportes">Reportes</a>
+      </li>
+      <li uk-toggle="target: #offcanvas-nav-menu">
+        <a routerLink="/admin-datos">Gestión XML</a>
+      </li>
+    </ul>
+
+    <div class="uk-margin-top">
+      <a (click)="logout()" class="uk-button uk-button-danger uk-width-1-1" uk-toggle="target: #offcanvas-nav-menu">
+        Cerrar Sesión ({{ userName }})
+        <span *ngIf="isVip" class="uk-label uk-label-warning uk-margin-small-left">VIP</span>
+        <span uk-icon="icon: sign-out" class="uk-margin-small-left"></span>
+      </a>
+    </div>
+
+  </div>
+</div>
