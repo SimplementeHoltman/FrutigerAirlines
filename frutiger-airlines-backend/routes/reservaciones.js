@@ -11,7 +11,7 @@ router.post('/', async (req, res) => {
   const { usuario_id, asientos, metodo_seleccion } = req.body;
 
   if (!usuario_id || !asientos || !Array.isArray(asientos) || asientos.length === 0) {
-    return res.status(400).json({ message: 'Datos de reservación inválidos.' });
+    return res.fail('Datos de reservación inválidos.', 'RESERVATION_INVALID_PAYLOAD', 400);
   }
 
   const client = await pool.connect();
@@ -101,16 +101,15 @@ router.post('/', async (req, res) => {
     ).catch(err => console.error('Fallo al enviar email de reserva:', err));
 
     // 8. Responder al cliente
-    res.status(201).json({
-      message: 'Reservación(es) creada(s) exitosamente.',
+    res.ok('Reservación(es) creada(s) exitosamente.', 'RESERVATION_CREATED', {
       reservaciones: reservacionesCreadas,
       precioTotal: precioTotalCompra.toFixed(2)
-    });
+    }, 201);
 
   } catch (error) {
     await client.query('ROLLBACK'); // Revertir todo si algo falló
     console.error('Error en POST /reservaciones:', error);
-    res.status(400).json({ message: error.message || 'Error al crear la reservación.' });
+  res.fail(error.message || 'Error al crear la reservación.', 'RESERVATION_CREATE_ERROR', 400);
   } finally {
     client.release(); // Liberar cliente de pool
   }
@@ -119,7 +118,7 @@ router.post('/', async (req, res) => {
 // GET /api/reservaciones/usuario/:usuarioId
 router.get('/usuario/:usuarioId', async (req, res) => {
     const { usuarioId } = req.params;
-    try {
+  try {
         const { rows } = await query(
             `SELECT r.*, a.numero_asiento, a.clase_asiento
              FROM reservaciones r
@@ -140,8 +139,8 @@ router.put('/:reservacionId', async (req, res) => {
   const { reservacionId } = req.params;
   const { nuevo_asiento_id, cui_pasajero } = req.body;
 
-  if (!nuevo_asiento_id || !cui_pasajero) {
-    return res.status(400).json({ message: 'Se requiere nuevo_asiento_id y cui_pasajero.' });
+    if (!nuevo_asiento_id || !cui_pasajero) {
+    return res.fail('Se requiere nuevo_asiento_id y cui_pasajero.', 'RESERVATION_MODIFY_VALIDATION', 400);
   }
 
   const client = await pool.connect();
@@ -207,16 +206,15 @@ router.put('/:reservacionId', async (req, res) => {
         getModificationEmail(usuario.rows[0], updatedRes.rows[0], recargo.toFixed(2))
     ).catch(err => console.error('Fallo al enviar email de modificación:', err));
 
-    res.status(200).json({
-      message: 'Reservación modificada exitosamente.',
+    res.ok('Reservación modificada exitosamente.', 'RESERVATION_MODIFIED', {
       reservacion: updatedRes.rows[0],
       recargoAplicado: recargo.toFixed(2)
-    });
+    }, 200);
 
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error en PUT /reservaciones:', error);
-    res.status(400).json({ message: error.message || 'Error al modificar la reservación.' });
+  res.fail(error.message || 'Error al modificar la reservación.', 'RESERVATION_MODIFY_ERROR', 400);
   } finally {
     client.release();
   }
@@ -228,7 +226,7 @@ router.delete('/:reservacionId', async (req, res) => {
   const { cui_pasajero } = req.body; // Validación por CUI
 
   if (!cui_pasajero) {
-    return res.status(400).json({ message: 'El CUI del pasajero es requerido para cancelar.' });
+    return res.fail('El CUI del pasajero es requerido para cancelar.', 'RESERVATION_CANCEL_VALIDATION', 400);
   }
 
   try {
@@ -242,7 +240,7 @@ router.delete('/:reservacionId', async (req, res) => {
     );
 
     if (cancelRes.rows.length === 0) {
-      return res.status(404).json({ message: 'Reservación activa no encontrada o CUI no coincide.' });
+      return res.fail('Reservación activa no encontrada o CUI no coincide.', 'RESERVATION_NOT_FOUND_OR_CUI_MISMATCH', 404);
     }
 
     const reservacionCancelada = cancelRes.rows[0];
@@ -257,14 +255,11 @@ router.delete('/:reservacionId', async (req, res) => {
         getCancellationEmail(usuario.rows[0], { ...reservacionCancelada, numero_asiento: asiento.rows[0].numero_asiento })
     ).catch(err => console.error('Fallo al enviar email de cancelación:', err));
 
-    res.status(200).json({
-      message: 'Reservación cancelada exitosamente.',
-      reservacion: reservacionCancelada
-    });
+    res.ok('Reservación cancelada exitosamente.', 'RESERVATION_CANCELLED', { reservacion: reservacionCancelada }, 200);
 
   } catch (error) {
     console.error('Error en DELETE /reservaciones:', error);
-    res.status(500).json({ message: 'Error al cancelar la reservación.' });
+    res.fail('Error al cancelar la reservación.', 'RESERVATION_CANCEL_ERROR', 500);
   }
 });
 

@@ -8,6 +8,7 @@ import { CuiService } from '../../services/cui.service';
 import { ReservacionService } from '../../services/reservacion.service';
 import { NavegacionComponent } from '../../components/navegacion/navegacion.component'; // <-- importar aquí
 import { AuthService } from '../../services/auth.service';
+import { ModalService } from '../../services/modal.service';
 
 
 // Tipo para agrupar asientos por fila
@@ -51,7 +52,8 @@ export class SeleccionVueloComponent implements OnInit {
     private cuiService: CuiService,
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private modal: ModalService
   ) {
     this.pasajerosForm = this.fb.group({
       pasajeros: this.fb.array([])
@@ -148,11 +150,13 @@ export class SeleccionVueloComponent implements OnInit {
 
     if (!this.incluirNegocios && !this.incluirEconomica) {
       this.avisoAleatorio = 'Selecciona al menos una clase (Negocios o Económica).';
+      this.modal.open({ type: 'warning', message: this.avisoAleatorio });
       return;
     }
 
     if (libres.length === 0) {
       this.avisoAleatorio = 'No hay asientos libres disponibles.';
+      this.modal.open({ type: 'warning', message: this.avisoAleatorio });
       return;
     }
 
@@ -161,6 +165,7 @@ export class SeleccionVueloComponent implements OnInit {
     const n = Math.min(solicitados, libres.length);
     if (solicitados > libres.length) {
       this.avisoAleatorio = `Solo hay ${libres.length} asiento(s) disponible(s) en la(s) clase(s) seleccionada(s). Se ajustó la cantidad a ${n}.`;
+      this.modal.open({ type: 'warning', message: this.avisoAleatorio });
       this.cantidadAleatoria = n;
     }
     // Mezclar aleatoriamente (Fisher-Yates simplificado usando sort para simplicidad)
@@ -177,6 +182,7 @@ export class SeleccionVueloComponent implements OnInit {
 
     this.seleccionFueAleatoria = true;
     this.avisoAleatorio = `Se seleccionaron aleatoriamente ${seleccionados.length} asiento(s).`;
+    this.modal.open({ type: 'success', message: this.avisoAleatorio, autoCloseMs: 2500 });
   }
 
   limpiarSeleccion() {
@@ -192,6 +198,7 @@ export class SeleccionVueloComponent implements OnInit {
   async confirmarReserva() {
     if (this.pasajerosForm.invalid) {
       this.errorReserva = 'Por favor, completa todos los campos de los pasajeros.';
+      this.modal.open({ type: 'error', message: this.errorReserva });
       return;
     }
 
@@ -211,12 +218,13 @@ export class SeleccionVueloComponent implements OnInit {
       } catch (error: any) {
         // Si la promesa falla (400), el CUI es inválido
         todosCuisValidos = false;
-        this.cuiErrores[i] = error.error?.mensaje || 'CUI inválido';
+        this.cuiErrores[i] = error.error?.mensaje || error.error?.message || 'CUI inválido';
       }
     }
 
     if (!todosCuisValidos) {
       this.errorReserva = 'Hay errores en los números de CUI. Por favor, revísalos.';
+      this.modal.open({ type: 'error', message: this.errorReserva });
       return;
     }
 
@@ -225,7 +233,7 @@ export class SeleccionVueloComponent implements OnInit {
     this.reservacionService.crearReservacion(pasajerosData, metodo).subscribe({
       next: (response) => {
         const vipMsg = this.isVip ? ` (incluye descuento VIP ${this.vipDescuento || 10}%)` : '';
-        this.exitoReserva = `¡Reserva confirmada! Total: Q${response.precioTotal}${vipMsg}. Serás redirigido a 'Mis Reservas'.`;
+  this.exitoReserva = `¡Reserva confirmada! Total: Q${response.precioTotal}${vipMsg}. Serás redirigido a 'Mis Reservas'.`;
 
         // Limpiar formulario y selección
         this.pasajerosArray.clear();
@@ -238,7 +246,7 @@ export class SeleccionVueloComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al reservar:', err);
-        this.errorReserva = err.error?.message || 'Error desconocido al crear la reserva.';
+        this.errorReserva = err.error?.message || err.error?.mensaje || 'Error desconocido al crear la reserva.';
         this.cargarAsientos(); // Recargar por si alguien más tomó el asiento
       }
     });

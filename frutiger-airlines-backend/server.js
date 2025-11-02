@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import responseFormatter from './utils/response.js';
 
 // Importar rutas
 import authRoutes from './routes/auth.js';
@@ -20,6 +21,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Permitir peticiones de tu frontend Angular
 app.use(express.json()); // para parsear application/json
 app.use(express.urlencoded({ extended: true })); // para parsear application/x-www-form-urlencoded
+// Formateador de respuestas (agrega res.ok y res.fail)
+app.use(responseFormatter);
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
@@ -34,13 +37,13 @@ app.use('/api/usuarios', vipRoutes); // Para /api/usuarios/{id}/vip
 
 // Ruta de bienvenida
 app.get('/api', (req, res) => {
-  res.json({ message: 'Bienvenido a la API de FrutigerAirlines' });
+  res.ok('Bienvenido a la API de FrutigerAirlines', 'WELCOME');
 });
 
 // Manejo de errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send({ error: 'Algo salió mal en el servidor!', details: err.message });
+  res.fail('Algo salió mal en el servidor!', 'INTERNAL_ERROR', 500, { details: err.message });
 });
 
 // Iniciar servidor

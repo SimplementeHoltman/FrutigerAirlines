@@ -1,0 +1,21 @@
+<div id="app-message-modal" class="uk-flex-top" uk-modal>
+  <div class="uk-modal-dialog uk-modal-body uk-margin-auto-vertical app-modal">
+    <div class="app-modal-header" [ngClass]="{
+      'type-success': state?.type === 'success',
+      'type-warning': state?.type === 'warning',
+      'type-error': state?.type === 'error'
+    }">
+  <span class="uk-icon uk-margin-small-right" [attr.uk-icon]="state?.type === 'success' ? 'check' : (state?.type === 'warning' ? 'warning' : 'close')"></span>
+      <h3 class="uk-modal-title uk-margin-remove">{{ state?.title }}</h3>
+    </div>
+
+    <div class="app-modal-body">
+      <p class="uk-margin-small">{{ state?.message }}</p>
+      <p *ngIf="state?.code" class="uk-text-meta uk-margin-remove">Código: {{ state?.code }}</p>
+    </div>
+
+    <div class="uk-text-right">
+      <button class="uk-button uk-button-default uk-modal-close" type="button" (click)="close()">Cerrar</button>
+    </div>
+  </div>
+</div>

@@ -22,11 +22,7 @@
         <button class="uk-button uk-button-secondary uk-margin-small-left" (click)="seleccionarAleatorio()">Seleccionar aleatoriamente</button>
         <button class="uk-button uk-button-default uk-margin-small-left" (click)="limpiarSeleccion()">Limpiar selección</button>
       </div>
-      <div class="uk-width-1-1">
-        <div *ngIf="avisoAleatorio" class="uk-alert-primary uk-margin-remove" uk-alert>
-          <p class="uk-margin-remove">{{ avisoAleatorio }}</p>
-        </div>
-      </div>
+      <div class="uk-width-1-1"></div>
     </div>
   </div>
 
@@ -107,8 +103,8 @@
                   </label>
                 </div>
 
-                <div *ngIf="cuiErrores[i]" class="uk-alert-danger" uk-alert>
-                  <p class="uk-text-small uk-margin-remove">{{ cuiErrores[i] }}</p>
+                <div *ngIf="cuiErrores[i]" class="uk-text-danger uk-text-small">
+                  {{ cuiErrores[i] }}
                 </div>
               </div>
             </div>
@@ -120,12 +116,7 @@
             </button>
           </div>
 
-          <div *ngIf="errorReserva" class="uk-alert-danger uk-margin-top" uk-alert>
-            <p>{{ errorReserva }}</p>
-          </div>
-          <div *ngIf="exitoReserva" class="uk-alert-success uk-margin-top" uk-alert>
-            <p>{{ exitoReserva }}</p>
-          </div>
+          <!-- Mensajes globales ahora solo por modales -->
 
         </form>
       </div>

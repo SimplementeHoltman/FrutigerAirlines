@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -13,6 +13,7 @@ import { SeleccionVueloComponent } from './pages/seleccion-vuelo/seleccion-vuelo
 import { MisReservasComponent } from './pages/mis-reservas/mis-reservas.component';
 import { ReportesComponent } from './pages/reportes/reportes.component';
 import { AdminDatosComponent } from './pages/admin-datos/admin-datos.component';
+import { HttpMessageInterceptor } from './interceptors/http-message.interceptor';
 
 @NgModule({
   // No declarar componentes standalone; mantener declarations vacío
@@ -35,7 +36,9 @@ import { AdminDatosComponent } from './pages/admin-datos/admin-datos.component';
     ReportesComponent,
     AdminDatosComponent
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: HttpMessageInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,0 +1,27 @@
+.app-modal {
+  background: #fff;
+  color: #222;
+  border-radius: 8px;
+}
+.app-modal-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+.app-modal-header .uk-icon {
+  opacity: 0.8;
+}
+.app-modal-header.type-success {
+  color: #1e7f5a;
+}
+.app-modal-header.type-warning {
+  color: #a97c00;
+}
+.app-modal-header.type-error {
+  color: #a21d1d;
+}
+.app-modal-body {
+  font-size: 0.95rem;
+}

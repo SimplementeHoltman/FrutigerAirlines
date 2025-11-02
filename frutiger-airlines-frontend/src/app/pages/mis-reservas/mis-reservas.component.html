@@ -8,13 +8,7 @@
     <p>Cargando reservaciones...</p>
   </div>
 
-  <div *ngIf="error" class="uk-alert-danger" uk-alert>
-    <p>{{ error }}</p>
-  </div>
-
-  <div *ngIf="success" class="uk-alert-success" uk-alert>
-    <p>{{ success }}</p>
-  </div>
+  <!-- Mensajes globales ahora se muestran únicamente como modales -->
 
   <div *ngIf="!loading && reservaciones.length === 0" class="uk-text-muted uk-text-center">
     <p>No tienes reservaciones activas.</p>

@@ -7,6 +7,7 @@ import { NavegacionComponent } from '../../components/navegacion/navegacion.comp
 import { AsientoService } from '../../services/asiento.service';
 import { Asiento } from '../../interfaces/asiento.interface';
 import { firstValueFrom } from 'rxjs';
+import { ModalService } from '../../services/modal.service';
 
 type AsientosAgrupados = { [fila: string]: Asiento[] | any[] };
 
@@ -40,7 +41,8 @@ export class MisReservasComponent implements OnInit {
     private reservacionService: ReservacionService,
     private asientoService: AsientoService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private modal: ModalService
   ) { }
 
   ngOnInit(): void {
@@ -60,6 +62,7 @@ export class MisReservasComponent implements OnInit {
       error: (err) => {
         console.error('Error al cargar reservaciones', err);
         this.error = err?.error?.message || 'Error al cargar reservaciones.';
+        this.modal.open({ type: 'error', message: this.error });
         this.loading = false;
       }
     });
@@ -161,18 +164,21 @@ export class MisReservasComponent implements OnInit {
     const id = reservacion.reservacion_id ?? reservacion.id ?? null;
     if (id == null) {
       this.error = 'ID de reservación inválido.';
+      this.modal.open({ type: 'error', message: this.error });
       return;
     }
 
     const form = this.modificarForms[id];
     if (!form || form.invalid) {
       this.error = 'Por favor ingresa el CUI válido (13 dígitos).';
+      this.modal.open({ type: 'warning', message: this.error });
       return;
     }
 
     const nuevo = this.seleccionNuevoAsiento[id];
     if (!nuevo) {
       this.error = 'Selecciona primero un nuevo asiento disponible.';
+      this.modal.open({ type: 'warning', message: this.error });
       return;
     }
 
@@ -205,6 +211,7 @@ export class MisReservasComponent implements OnInit {
     const id = reservacion.reservacion_id ?? reservacion.id ?? null;
     if (id == null) {
       this.error = 'ID de reservación inválido.';
+      this.modal.open({ type: 'error', message: this.error });
       return;
     }
 

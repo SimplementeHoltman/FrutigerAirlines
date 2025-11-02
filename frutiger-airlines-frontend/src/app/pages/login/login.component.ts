@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ModalService } from '../../services/modal.service';
 
 @Component({
   selector: 'app-login',
@@ -16,16 +17,22 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
+  // Visibilidad de contraseñas (toggles)
+  showLoginPassword = false;
+  showRegisterPassword = false;
+  showRegisterConfirmPassword = false;
+
   // Mensaje general (inline alert)
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
+  errorMessage: string | null = null; // Obsoleto: se mantiene por compatibilidad visual
+  successMessage: string | null = null; // Obsoleto: se mantiene por compatibilidad visual
 
   // Errores por campo que vienen del servidor
   serverFieldErrors: { [field: string]: string } = {};
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
+  private authService: AuthService,
+  private modal: ModalService,
     private router: Router
   ) {
     if (this.authService.isLoggedIn()) {
@@ -40,14 +47,18 @@ export class LoginComponent implements OnInit {
     this.registerForm = this.fb.group({
       nombreCompleto: ['', Validators.required],
       email: ['', [Validators.required, Validators.email, Validators.pattern(/(@gmail\.com|@outlook\.com)$/)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordsMatchValidator() });
   }
 
   ngOnInit(): void {}
 
   // Muestra un mensaje inline (error o success). Si timeout > 0 lo oculta automáticamente.
   private showInlineMessage(message: string, type: 'error' | 'success' = 'error', timeout = 6000) {
+    // Mostrar SIEMPRE en modal UIkit
+    this.modal.open({ type: type === 'error' ? 'error' : 'success', message, autoCloseMs: type === 'success' ? Math.min(timeout, 4000) : undefined });
+    // Mantener mensaje inline temporalmente para no romper diseño actual
     if (type === 'error') {
       this.errorMessage = message;
       this.successMessage = null;
@@ -56,10 +67,7 @@ export class LoginComponent implements OnInit {
       this.errorMessage = null;
     }
     if (timeout > 0) {
-      setTimeout(() => {
-        this.errorMessage = null;
-        this.successMessage = null;
-      }, timeout);
+      setTimeout(() => { this.errorMessage = null; this.successMessage = null; }, timeout);
     }
   }
 
@@ -110,7 +118,7 @@ export class LoginComponent implements OnInit {
       const body = await this.extractErrorBody(err);
 
       // Manejar arrays de errores { errors: [{ field, message }] }
-      if (body?.errors && Array.isArray(body.errors)) {
+  if (body?.errors && Array.isArray(body.errors)) {
         const messages: string[] = [];
         for (const e of body.errors) {
           if (e.field) {
@@ -130,7 +138,7 @@ export class LoginComponent implements OnInit {
       }
 
       // Manejar objeto fieldErrors: { field: message, ... }
-      if (body?.fieldErrors && typeof body.fieldErrors === 'object') {
+  if (body?.fieldErrors && typeof body.fieldErrors === 'object') {
         const messages: string[] = [];
         for (const k of Object.keys(body.fieldErrors)) {
           this.serverFieldErrors[k] = body.fieldErrors[k];
@@ -173,6 +181,7 @@ export class LoginComponent implements OnInit {
       email: { form: this.loginForm, name: 'email' },
       contrasena: { form: this.loginForm, name: 'password' },
       password: { form: this.loginForm, name: 'password' },
+      confirmPassword: { form: this.registerForm, name: 'confirmPassword' },
     };
     if (map[field]) return map[field].form.get(map[field].name);
     return null;
@@ -197,8 +206,7 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(email, password).subscribe({
       next: (response) => {
-        // Guardado en AuthService (realizado por el service), navegar al home
-        this.showInlineMessage('Inicio de sesión correcto', 'success', 1500);
+        // Guardado en AuthService (realizado por el service). El interceptor mostrará el modal con el mensaje de la API.
         this.router.navigate(['/']);
       },
       error: async (err) => {
@@ -224,7 +232,7 @@ export class LoginComponent implements OnInit {
 
     this.authService.register(nombreCompleto, email, password).subscribe({
       next: (response) => {
-        this.showInlineMessage('Registro exitoso. Ya puedes iniciar sesión.', 'success', 4000);
+        // El interceptor mostrará el modal con el mensaje de la API.
         this.registerForm.reset();
       },
       error: async (err) => {
@@ -232,6 +240,18 @@ export class LoginComponent implements OnInit {
         await this.handleApiError(err, 'Error al registrar la cuenta.');
       }
     });
+  }
+
+  // Validador: coincide password y confirmPassword
+  private passwordsMatchValidator(): ValidatorFn {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const pass = group.get('password')?.value;
+      const confirm = group.get('confirmPassword')?.value;
+      if (pass && confirm && pass !== confirm) {
+        return { passwordMismatch: true };
+      }
+      return null;
+    };
   }
 
 }

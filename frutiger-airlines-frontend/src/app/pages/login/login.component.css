@@ -1,1 +1,29 @@
-/* placeholder: src/app/pages/login/login.component.css */
+/* Altura que compensa cualquier margen superior (sin navbar) */
+.uk-height-viewport-minus-top {
+	min-height: calc(100vh - 80px);
+}
+
+/* Tarjeta con transición sutil */
+.app-card {
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.app-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+}
+
+/* Inputs con foco sutil usando paleta existente */
+.uk-input:focus {
+	border-color: var(--color-primario);
+	box-shadow: 0 0 0 3px rgba(20, 193, 250, 0.15);
+}
+
+/* Icono de visibilidad clickable */
+.toggle-visibility {
+	cursor: pointer;
+}
+
+/* Branding discreto */
+.app-brand {
+	letter-spacing: 0.3px;
+}

@@ -11,22 +11,28 @@ router.post('/register', async (req, res) => {
 
   // Validaciones
   if (!email || !contrasena || !nombreCompleto) {
-    return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
+    return res.fail('Todos los campos son obligatorios.', 'VALIDATION_ERROR', 400, {
+      fieldErrors: {
+        email: !email ? 'El email es obligatorio.' : undefined,
+        contrasena: !contrasena ? 'La contraseña es obligatoria.' : undefined,
+        nombreCompleto: !nombreCompleto ? 'El nombre es obligatorio.' : undefined
+      }
+    });
   }
 
   if (contrasena.length < 6) {
-    return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    return res.fail('La contraseña debe tener al menos 6 caracteres.', 'PASSWORD_TOO_SHORT', 400);
   }
 
   if (!email.endsWith('@gmail.com') && !email.endsWith('@outlook.com')) {
-    return res.status(400).json({ message: 'Solo se permiten correos @gmail.com y @outlook.com.' });
+    return res.fail('Solo se permiten correos @gmail.com y @outlook.com.', 'EMAIL_DOMAIN_NOT_ALLOWED', 400);
   }
 
   try {
     // 1. Verificar si el usuario ya existe
     const userExists = await query('SELECT * FROM usuarios WHERE email = $1', [email]);
     if (userExists.rows.length > 0) {
-      return res.status(409).json({ message: 'El usuario ya existe.' });
+      return res.fail('El usuario ya existe.', 'USER_ALREADY_EXISTS', 409);
     }
 
     // 2. Hashear contraseña
@@ -47,14 +53,11 @@ router.post('/register', async (req, res) => {
     ).catch(err => console.error('Fallo al enviar email de registro:', err));
 
     // 5. Responder
-    res.status(201).json({
-        message: 'Usuario registrado exitosamente.',
-        usuario: newUser.rows[0]
-    });
+  res.ok('Usuario registrado exitosamente.', 'USER_REGISTERED', { usuario: newUser.rows[0] }, 201);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error en el servidor al registrar usuario.' });
+    res.fail('Error en el servidor al registrar usuario.', 'REGISTER_SERVER_ERROR', 500);
   }
 });
 
@@ -63,7 +66,12 @@ router.post('/login', async (req, res) => {
   const { email, contrasena } = req.body;
 
   if (!email || !contrasena) {
-    return res.status(400).json({ message: 'Email y contraseña son obligatorios.' });
+    return res.fail('Email y contraseña son obligatorios.', 'VALIDATION_ERROR', 400, {
+      fieldErrors: {
+        email: !email ? 'El email es obligatorio.' : undefined,
+        contrasena: !contrasena ? 'La contraseña es obligatoria.' : undefined
+      }
+    });
   }
 
   try {
@@ -77,7 +85,7 @@ router.post('/login', async (req, res) => {
     `, [email]);
 
     if (userRes.rows.length === 0) {
-      return res.status(401).json({ message: 'Credenciales inválidas.' });
+      return res.fail('Credenciales inválidas.', 'INVALID_CREDENTIALS', 401);
     }
 
     const usuario = userRes.rows[0];
@@ -85,7 +93,7 @@ router.post('/login', async (req, res) => {
     // 2. Comparar contraseña
     const isMatch = await bcrypt.compare(contrasena, usuario.contrasena);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Credenciales inválidas.' });
+      return res.fail('Credenciales inválidas.', 'INVALID_CREDENTIALS', 401);
     }
 
     // 3. Preparar respuesta (omitir contraseña)
@@ -94,15 +102,11 @@ router.post('/login', async (req, res) => {
     // NOTA: Aquí iría la generación de JWT, pero omitida por instrucción de "no middleware"
     // const token = jwt.sign({ id: usuario.usuario_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({
-      message: 'Login exitoso',
-      // token: token, (Omitido)
-      usuario: usuarioSinPass
-    });
+    res.ok('Login exitoso', 'LOGIN_SUCCESS', { usuario: usuarioSinPass }, 200);
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error en el servidor al iniciar sesión.' });
+    res.fail('Error en el servidor al iniciar sesión.', 'LOGIN_SERVER_ERROR', 500);
   }
 });
 
