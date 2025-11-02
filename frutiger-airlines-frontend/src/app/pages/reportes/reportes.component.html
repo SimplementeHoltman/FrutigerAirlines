@@ -45,6 +45,54 @@
 
         <div class="uk-width-1-1">
             <div class="uk-card uk-card-default uk-card-body">
+                <h3 class="uk-card-title">Mapa de asientos</h3>
+
+                <div *ngIf="diagrama; else mapaEmpty">
+                    <div class="uk-grid-small" uk-grid>
+                        <div class="uk-width-1-1 uk-width-1-2@m">
+                            <h4 class="uk-margin-small">Clase de Negocios</h4>
+                            <div class="uk-margin">
+                                <div *ngFor="let fila of filasNegocios" class="uk-flex uk-flex-center">
+                                    <span class="uk-width-1-6 uk-text-bold uk-text-right uk-margin-right">{{ fila }}</span>
+                                    <div *ngFor="let asiento of asientosNegocios[fila]"
+                                         class="asiento uk-flex uk-flex-center uk-flex-middle"
+                                         [ngClass]="{
+                                           'estado-Libre': asiento?.estado === 'Libre',
+                                           'estado-Ocupado': asiento?.estado === 'Ocupado'
+                                         }">
+                                      {{ asiento?.numero_asiento }}
+                                    </div>
+                                    <span class="uk-width-1-6"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="uk-width-1-1 uk-width-1-2@m">
+                            <h4 class="uk-margin-small">Clase Económica</h4>
+                            <div class="uk-margin">
+                                <div *ngFor="let fila of filasEconomica" class="uk-flex uk-flex-center">
+                                    <span class="uk-width-1-6 uk-text-bold uk-text-right uk-margin-right">{{ fila }}</span>
+                                    <div *ngFor="let asiento of asientosEconomica[fila]"
+                                         class="asiento uk-flex uk-flex-center uk-flex-middle"
+                                         [ngClass]="{
+                                           'estado-Libre': asiento?.estado === 'Libre',
+                                           'estado-Ocupado': asiento?.estado === 'Ocupado'
+                                         }">
+                                      {{ asiento?.numero_asiento }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <ng-template #mapaEmpty>
+                    <p class="uk-text-muted">Sin datos de asientos.</p>
+                </ng-template>
+            </div>
+        </div>
+
+        <div class="uk-width-1-1">
+            <div class="uk-card uk-card-default uk-card-body">
                 <h3 class="uk-card-title">Reservas por usuario</h3>
                 
                 <table class="uk-table uk-table-divider uk-table-small uk-table-responsive" *ngIf="porUsuario?.length; else perUserEmpty">

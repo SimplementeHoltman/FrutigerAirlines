@@ -1,0 +1,454 @@
+openapi: 3.0.3
+info:
+  title: API de FrutigerAirlines
+  version: 1.0.0
+  description: |
+    Documentación de la API para el sistema de reservas de asientos de FrutigerAirlines.
+    Esta documentación se genera desde un archivo YAML externo y no modifica la lógica existente.
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+
+tags:
+  - name: Auth
+    description: Autenticación de usuarios
+  - name: Asientos
+    description: Consulta de asientos y estados
+  - name: Validaciones
+    description: Validación de CUI y catálogos de ubicación
+  - name: Reservaciones
+    description: Gestión de reservaciones
+  - name: Gestión de Datos
+    description: Importación/Exportación de datos en XML
+  - name: Reportes
+    description: Reportes y estadísticas
+  - name: VIP
+    description: Estado VIP de usuarios
+  - name: Misc
+    description: Rutas varias
+
+paths:
+  /api:
+    get:
+      tags: [Misc]
+      summary: Bienvenida a la API
+      responses:
+        '200':
+          description: Mensaje de bienvenida
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Registro de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+        '400':
+          description: Error de validación
+        '409':
+          description: Usuario ya existe
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Login exitoso
+        '401':
+          description: Credenciales inválidas
+
+  /api/asientos:
+    get:
+      tags: [Asientos]
+      summary: Lista todos los asientos con su estado actual
+      responses:
+        '200':
+          description: Lista de asientos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AsientoEstado'
+  /api/asientos/{clase}:
+    get:
+      tags: [Asientos]
+      summary: Lista asientos por clase
+      parameters:
+        - in: path
+          name: clase
+          required: true
+          schema:
+            type: string
+            enum: [Negocios, Economica]
+          description: Clase de asiento
+      responses:
+        '200':
+          description: Lista de asientos filtrados por clase
+  /api/asientos/estado/{numeroAsiento}:
+    get:
+      tags: [Asientos]
+      summary: Obtiene el estado de un asiento por número
+      parameters:
+        - in: path
+          name: numeroAsiento
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estado del asiento
+        '404':
+          description: Asiento no encontrado
+
+  /api/departamentos:
+    get:
+      tags: [Validaciones]
+      summary: Lista de departamentos
+      responses:
+        '200':
+          description: Lista de departamentos
+  /api/departamentos/{codigoDepartamento}/municipios:
+    get:
+      tags: [Validaciones]
+      summary: Lista municipios por código de departamento
+      parameters:
+        - in: path
+          name: codigoDepartamento
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de municipios
+  /api/validar-cui:
+    post:
+      tags: [Validaciones]
+      summary: Valida un CUI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidarCuiRequest'
+      responses:
+        '200':
+          description: Resultado de validación
+        '400':
+          description: CUI inválido
+
+  /api/reservaciones:
+    post:
+      tags: [Reservaciones]
+      summary: Crea una o varias reservaciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservacionCreateRequest'
+      responses:
+        '201':
+          description: Reservaciones creadas exitosamente
+        '400':
+          description: Error de validación
+  /api/reservaciones/usuario/{usuarioId}:
+    get:
+      tags: [Reservaciones]
+      summary: Obtiene las reservaciones de un usuario
+      parameters:
+        - in: path
+          name: usuarioId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de reservaciones del usuario
+  /api/reservaciones/{reservacionId}:
+    put:
+      tags: [Reservaciones]
+      summary: Modifica una reservación
+      parameters:
+        - in: path
+          name: reservacionId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservacionModifyRequest'
+      responses:
+        '200':
+          description: Reservación modificada
+        '400':
+          description: Error de validación
+    delete:
+      tags: [Reservaciones]
+      summary: Cancela una reservación
+      parameters:
+        - in: path
+          name: reservacionId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cui_pasajero:
+                  type: string
+                  example: "1234567890123"
+      responses:
+        '200':
+          description: Reservación cancelada
+        '404':
+          description: Reservación no encontrada o CUI no coincide
+
+  /api/exportar/xml:
+    get:
+      tags: [Gestión de Datos]
+      summary: Exporta los datos a XML y descarga el archivo
+      responses:
+        '200':
+          description: Archivo XML generado
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+  /api/importar/xml:
+    post:
+      tags: [Gestión de Datos]
+      summary: Importa datos desde un archivo XML
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Resultado de la importación
+        '400':
+          description: No se envió archivo o formato inválido
+
+  /api/reportes/diagrama-asientos:
+    get:
+      tags: [Reportes]
+      summary: Obtiene el diagrama de asientos por clase y estado
+      responses:
+        '200':
+          description: Diagrama de asientos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteDiagrama'
+  /api/reportes/estadisticas:
+    get:
+      tags: [Reportes]
+      summary: Obtiene estadísticas generales
+      responses:
+        '200':
+          description: Estadísticas del sistema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estadisticas'
+  /api/reportes/reservaciones-usuario:
+    get:
+      tags: [Reportes]
+      summary: Lista agregada de reservaciones por usuario
+      responses:
+        '200':
+          description: Lista de usuarios con métricas de reservaciones
+
+  /api/usuarios/{usuarioId}/vip:
+    get:
+      tags: [VIP]
+      summary: Verifica si un usuario es VIP
+      parameters:
+        - in: path
+          name: usuarioId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Estado VIP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VipStatus'
+
+components:
+  schemas:
+    AuthRegisterRequest:
+      type: object
+      required: [email, contrasena, nombreCompleto]
+      properties:
+        email:
+          type: string
+          format: email
+          example: usuario@outlook.com
+        contrasena:
+          type: string
+          minLength: 6
+          example: "secreta123"
+        nombreCompleto:
+          type: string
+          example: "Juan Pérez"
+    AuthLoginRequest:
+      type: object
+      required: [email, contrasena]
+      properties:
+        email:
+          type: string
+          format: email
+          example: usuario@gmail.com
+        contrasena:
+          type: string
+          example: "secreta123"
+
+    ValidarCuiRequest:
+      type: object
+      required: [cui]
+      properties:
+        cui:
+          type: string
+          example: "1234567890123"
+
+    AsientoEstado:
+      type: object
+      properties:
+        asiento_id:
+          type: integer
+        numero_asiento:
+          type: string
+        clase_asiento:
+          type: string
+          enum: [Negocios, Economica]
+        estado:
+          type: string
+          enum: [Ocupado, Libre]
+        reservacion_id:
+          type: integer
+          nullable: true
+
+    ReservacionCreateRequest:
+      type: object
+      required: [usuario_id, asientos, metodo_seleccion]
+      properties:
+        usuario_id:
+          type: integer
+          example: 1
+        metodo_seleccion:
+          type: string
+          enum: [Manual, Aleatorio]
+          example: Manual
+        asientos:
+          type: array
+          items:
+            type: object
+            required: [asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje]
+            properties:
+              asiento_id:
+                type: integer
+                example: 5
+              nombre_pasajero:
+                type: string
+                example: "Ana Gómez"
+              cui_pasajero:
+                type: string
+                example: "1234567890123"
+              tiene_equipaje:
+                type: boolean
+                example: true
+
+    ReservacionModifyRequest:
+      type: object
+      required: [nuevo_asiento_id, cui_pasajero]
+      properties:
+        nuevo_asiento_id:
+          type: integer
+          example: 10
+        cui_pasajero:
+          type: string
+          example: "1234567890123"
+
+    VipStatus:
+      type: object
+      properties:
+        es_vip:
+          type: boolean
+        total_reservaciones:
+          type: integer
+        reservaciones_requeridas:
+          type: integer
+        descuento_aplicable:
+          type: number
+          format: float
+          example: 0.1
+
+    ReporteDiagrama:
+      type: object
+      properties:
+        asientos_negocios:
+          type: array
+          items:
+            $ref: '#/components/schemas/AsientoEstado'
+        asientos_economica:
+          type: array
+          items:
+            $ref: '#/components/schemas/AsientoEstado'
+        total_ocupados:
+          type: integer
+        total_libres:
+          type: integer
+
+    Estadisticas:
+      type: object
+      properties:
+        total_usuarios:
+          type: integer
+        total_reservaciones:
+          type: integer
+        reservaciones_activas:
+          type: integer
+        reservaciones_canceladas:
+          type: integer
+        modificaciones_realizadas:
+          type: integer
+        asientos_ocupados_negocios:
+          type: integer
+        asientos_libres_negocios:
+          type: integer
+        asientos_ocupados_economica:
+          type: integer
+        asientos_libres_economica:
+          type: integer
+        seleccion_manual:
+          type: integer
+        seleccion_aleatoria:
+          type: integer
