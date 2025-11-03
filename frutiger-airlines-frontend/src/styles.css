@@ -154,6 +154,35 @@ body {
 .uk-offcanvas-bar a { color: var(--text-main); }
 .uk-offcanvas-bar a:hover { color: var(--blue-primary); }
 
+/* Asegurar contraste de enlaces en menú móvil (UIkit nav-primary espera fondo oscuro) */
+.uk-offcanvas-bar .uk-nav-primary > li > a,
+.uk-offcanvas-bar .uk-nav-default > li > a,
+.uk-offcanvas-bar .uk-nav > li > a {
+  color: var(--text-main) !important;
+}
+.uk-offcanvas-bar .uk-nav-primary > li > a:hover,
+.uk-offcanvas-bar .uk-nav-default > li > a:hover,
+.uk-offcanvas-bar .uk-nav > li > a:hover {
+  color: var(--blue-primary) !important;
+}
+
+/* Icono de cierre e identidades dentro del offcanvas en fondo claro */
+.uk-offcanvas-close {
+  color: var(--text-main);
+}
+.uk-offcanvas-bar h3,
+.uk-offcanvas-bar .uk-logo {
+  color: var(--text-main);
+}
+
+/* Botón hamburguesa sobre navbar clara */
+.uk-navbar-toggle {
+  color: var(--text-main) !important;
+}
+.uk-navbar-toggle:hover {
+  color: var(--blue-primary) !important;
+}
+
 /* LOGO placeholder (reemplazable por imagen) */
 .fa-logo {
   width: 56px;
