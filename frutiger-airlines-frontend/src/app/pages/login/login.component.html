@@ -34,10 +34,11 @@
               <div class="uk-margin">
                 <div class="uk-inline uk-width-1-1">
                   <span class="uk-form-icon" uk-icon="icon: lock"></span>
-                  <input class="uk-input" [type]="showLoginPassword ? 'text' : 'password'" placeholder="Ingrese su contraseña" formControlName="password" required>
-                  <span class="uk-form-icon uk-form-icon-flip toggle-visibility" 
-                        [attr.uk-icon]="showLoginPassword ? 'icon: eye-slash' : 'icon: eye'" 
-                        (click)="showLoginPassword = !showLoginPassword"></span>
+            <input class="uk-input" [type]="showLoginPassword ? 'text' : 'password'" placeholder="Ingrese su contraseña" formControlName="password" required>
+            <a href="#" class="uk-form-icon uk-form-icon-flip toggle-visibility"
+              [attr.uk-icon]="showLoginPassword ? 'icon: eye-slash' : 'icon: eye'"
+              aria-label="{{ showLoginPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}"
+              (click)="$event.preventDefault(); showLoginPassword = !showLoginPassword"></a>
                 </div>
                 <div *ngIf="loginForm.get('password')?.errors?.['server']" class="uk-text-danger uk-text-small uk-margin-small-top">
                   {{ loginForm.get('password')?.errors?.['server'] }}
@@ -96,10 +97,11 @@
               <div class="uk-margin">
                 <div class="uk-inline uk-width-1-1">
                   <span class="uk-form-icon" uk-icon="icon: lock"></span>
-                  <input class="uk-input" [type]="showRegisterPassword ? 'text' : 'password'" placeholder="Ingrese su contraseña" formControlName="password" required>
-                  <span class="uk-form-icon uk-form-icon-flip toggle-visibility" 
-                        [attr.uk-icon]="showRegisterPassword ? 'icon: eye-slash' : 'icon: eye'" 
-                        (click)="showRegisterPassword = !showRegisterPassword"></span>
+            <input class="uk-input" [type]="showRegisterPassword ? 'text' : 'password'" placeholder="Ingrese su contraseña" formControlName="password" required>
+            <a href="#" class="uk-form-icon uk-form-icon-flip toggle-visibility"
+              [attr.uk-icon]="showRegisterPassword ? 'icon: eye-slash' : 'icon: eye'"
+              aria-label="{{ showRegisterPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}"
+              (click)="$event.preventDefault(); showRegisterPassword = !showRegisterPassword"></a>
                 </div>
                 <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('required')" class="uk-text-danger uk-text-small uk-margin-small-top">
                   La contraseña es obligatoria.
@@ -115,10 +117,11 @@
               <div class="uk-margin">
                 <div class="uk-inline uk-width-1-1">
                   <span class="uk-form-icon" uk-icon="icon: lock"></span>
-                  <input class="uk-input" [type]="showRegisterConfirmPassword ? 'text' : 'password'" placeholder="Confirme su contraseña" formControlName="confirmPassword" required>
-                  <span class="uk-form-icon uk-form-icon-flip toggle-visibility" 
-                        [attr.uk-icon]="showRegisterConfirmPassword ? 'icon: eye-slash' : 'icon: eye'" 
-                        (click)="showRegisterConfirmPassword = !showRegisterConfirmPassword"></span>
+            <input class="uk-input" [type]="showRegisterConfirmPassword ? 'text' : 'password'" placeholder="Confirme su contraseña" formControlName="confirmPassword" required>
+            <a href="#" class="uk-form-icon uk-form-icon-flip toggle-visibility"
+              [attr.uk-icon]="showRegisterConfirmPassword ? 'icon: eye-slash' : 'icon: eye'"
+              aria-label="{{ showRegisterConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña' }}"
+              (click)="$event.preventDefault(); showRegisterConfirmPassword = !showRegisterConfirmPassword"></a>
                 </div>
                 <div *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.hasError('required')" class="uk-text-danger uk-text-small uk-margin-small-top">
                   Debe confirmar la contraseña.
