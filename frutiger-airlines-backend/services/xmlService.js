@@ -2,6 +2,8 @@ import { create } from 'xmlbuilder2';
 import pool, { query } from '../db.js';
 import { parseStringPromise } from 'xml2js';
 import bcrypt from 'bcryptjs';
+// Marca de versión para depurar despliegue de servicio
+console.log('[xmlService] Cargado módulo xmlService.js (versión: 2025-11-02T-DELETE-cleanup-v2)');
 
 /**
  * Exporta todos los datos del sistema a XML.
@@ -140,7 +142,7 @@ export const importarDatosXML = async (xmlBuffer) => {
   const resultados = {
     usuarios_procesados: 0,
     usuarios_fallidos: 0,
-    asientos_procesados: 0, // Generalmente no se importan asientos
+    asientos_procesados: 0,
     asientos_fallidos: 0,
     reservaciones_procesadas: 0,
     reservaciones_fallidas: 0,
@@ -149,20 +151,53 @@ export const importarDatosXML = async (xmlBuffer) => {
 
   try {
     const data = await parseStringPromise(xmlBuffer.toString('utf-8'));
-    const sistema = data.SistemaReservasAvion;
+    const sistema = data && (data.SistemaReservasAvion || data["SistemaReservasAvion"]);
+
+    if (!sistema) {
+      throw new Error('XML inválido: nodo raíz <SistemaReservasAvion> no encontrado.');
+    }
+
+    // Utilidad para parsear fechas de forma robusta (ISO o dd/mm/yyyy HH:MM[:SS])
+    const parseDateFlexible = (val) => {
+      if (!val) return null;
+      const s = String(val).trim().replace(',', '');
+      const d1 = new Date(s);
+      if (!isNaN(d1.getTime())) return d1; // ISO u otros formatos válidos
+      // Intento dd/mm/yyyy HH:MM[:SS]
+      const m = s.match(/^([0-3]?\d)\/([0-1]?\d)\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (m) {
+        const [_, dd, mm, yyyy, HH, MM, SS] = m;
+        const dt = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(HH), Number(MM), Number(SS || 0));
+        if (!isNaN(dt.getTime())) return dt;
+      }
+      return null;
+    };
 
     // Conexión de cliente para transacción
     const client = await pool.connect();
 
     try {
-      await client.query('BEGIN');
+  await client.query('BEGIN');
+  console.log('[XML Import] Iniciando limpieza total de tablas...');
+
+      // 0. Limpiar datos existentes según requerimiento (opción TRUNCATE CASCADE o DELETE)
+      const cleanMode = 'DELETE';
+      try {
+        console.log('[XML Import] DELETE (hijo->padre) modificaciones,reservaciones,usuarios,asientos');
+        await client.query('DELETE FROM modificaciones');
+        await client.query('DELETE FROM reservaciones');
+        await client.query('DELETE FROM usuarios');
+        await client.query('DELETE FROM asientos');
+      } catch (cleanErr) {
+        throw new Error('LIMPIEZA_ERROR(' + cleanMode + '): ' + cleanErr.message);
+      }
 
       // 1. Procesar Usuarios
-      if (sistema.Usuarios && sistema.Usuarios[0].Usuario) {
+      if (sistema.Usuarios && sistema.Usuarios[0] && sistema.Usuarios[0].Usuario) {
         for (const user of sistema.Usuarios[0].Usuario) {
           try {
-            const email = user.$.email;
-            const nombre = user.nombreCompleto[0];
+            const email = user.$?.email;
+            const nombre = user.nombreCompleto?.[0] ?? '';
             // Asumir contraseña genérica o no importar
             const tempPassword = await bcrypt.hash('import123', 10);
 
@@ -176,24 +211,42 @@ export const importarDatosXML = async (xmlBuffer) => {
             resultados.usuarios_procesados++;
           } catch (err) {
             resultados.usuarios_fallidos++;
-            resultados.errores.push(`Usuario ${user.$.email}: ${err.message}`);
+            resultados.errores.push(`Usuario ${user?.$?.email || '[sin-email]'}: ${err.message}`);
           }
         }
       }
 
-      // 2. Procesar Asientos (Opcional, generalmente ya existen)
-      // Omitido, ya que los asientos se pueblan con setup_data.sql.
-      // Se podría actualizar el estado, pero es mejor hacerlo vía reservaciones.
+      // 2. Procesar Asientos (según XML)
+      if (sistema.Asientos && sistema.Asientos[0] && sistema.Asientos[0].Asiento) {
+        for (const as of sistema.Asientos[0].Asiento) {
+          try {
+            const numero = as.$?.numero;
+            const clase = as.$?.clase;
+            // Estado se deriva de reservaciones; no se persiste en tabla.
+            await client.query(
+              `INSERT INTO asientos (numero_asiento, clase_asiento)
+               VALUES ($1, $2)`,
+              [numero, clase]
+            );
+            resultados.asientos_procesados++;
+          } catch (err) {
+            resultados.asientos_fallidos++;
+            resultados.errores.push(`Asiento ${as?.$?.numero || '[sin-numero]'}: ${err.message}`);
+          }
+        }
+      }
 
       // 3. Procesar Reservaciones
-      if (sistema.Reservaciones && sistema.Reservaciones[0].Reservacion) {
+      if (sistema.Reservaciones && sistema.Reservaciones[0] && sistema.Reservaciones[0].Reservacion) {
         for (const res of sistema.Reservaciones[0].Reservacion) {
           try {
-            const usuarioEmail = res.usuario[0];
-            const numeroAsiento = res.asiento[0];
-            const estado = res.estado;
-            const pasajero = res.pasajero[0];
-            const detalles = res.detalles[0];
+            // Aislar errores por reservación sin abortar toda la transacción
+            await client.query('SAVEPOINT sp_res');
+            const usuarioEmail = res.usuario?.[0];
+            const numeroAsiento = res.asiento?.[0];
+            const estado = res.$?.estado || res.estado || 'ACTIVA';
+            const pasajero = res.pasajero?.[0] || {};
+            const detalles = res.detalles?.[0] || {};
 
             // Buscar IDs
             const userRes = await client.query('SELECT usuario_id FROM usuarios WHERE email = $1', [usuarioEmail]);
@@ -206,23 +259,28 @@ export const importarDatosXML = async (xmlBuffer) => {
             const usuario_id = userRes.rows[0].usuario_id;
             const asiento_id = asientoRes.rows[0].asiento_id;
 
+            // Fecha de reservación (intenta respetar la del XML si es válida)
+            const fechaXML = detalles.fechaReservacion?.[0];
+            const fechaParsed = parseDateFlexible(fechaXML);
+
             // Insertar reservación (manejar duplicados)
             const insertRes = await client.query(
               `INSERT INTO reservaciones
-               (usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, estado, metodo_seleccion, precio_base, precio_total)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               (usuario_id, asiento_id, nombre_pasajero, cui_pasajero, tiene_equipaje, estado, metodo_seleccion, precio_base, precio_total, fecha_reservacion)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, NOW()))
                ON CONFLICT DO NOTHING -- Evita fallos si ya existe (ej. por ID)
                RETURNING reservacion_id`,
               [
                 usuario_id,
                 asiento_id,
-                pasajero.nombreCompleto[0],
-                pasajero.cui[0],
-                pasajero.tieneEquipaje[0] === 'true',
+                pasajero.nombreCompleto?.[0] ?? '',
+                pasajero.cui?.[0] ?? '',
+                (pasajero.tieneEquipaje?.[0] ?? 'false') === 'true',
                 estado,
-                detalles.metodoSeleccion[0],
-                parseFloat(detalles.precioBase[0]),
-                parseFloat(detalles.precioTotal[0])
+                detalles.metodoSeleccion?.[0] ?? 'Manual',
+                parseFloat(detalles.precioBase?.[0] ?? '0'),
+                parseFloat(detalles.precioTotal?.[0] ?? '0'),
+                fechaParsed
               ]
             );
 
@@ -231,21 +289,32 @@ export const importarDatosXML = async (xmlBuffer) => {
                 const newReservacionId = insertRes.rows[0].reservacion_id;
 
                 // Procesar Modificaciones
-                if (res.Modificaciones && res.Modificaciones[0].Modificacion) {
+                if (res.Modificaciones && res.Modificaciones[0] && res.Modificaciones[0].Modificacion) {
                     for(const mod of res.Modificaciones[0].Modificacion) {
-                        await client.query(
-                            `INSERT INTO modificaciones (reservacion_id, recargo_aplicado) VALUES ($1, $2)`,
-                            [newReservacionId, parseFloat(mod.recargo[0])]
-                        );
+                        try {
+                          await client.query('SAVEPOINT sp_mod');
+                          const recargoNum = parseFloat(mod.recargo?.[0] ?? '0');
+                          await client.query(
+                              `INSERT INTO modificaciones (reservacion_id, recargo_aplicado) VALUES ($1, $2)`,
+                              [newReservacionId, isNaN(recargoNum) ? 0 : recargoNum]
+                          );
+                          await client.query('RELEASE SAVEPOINT sp_mod');
+                        } catch (modErr) {
+                          await client.query('ROLLBACK TO SAVEPOINT sp_mod');
+                          resultados.errores.push(`Modificación reservación ${newReservacionId}: ${modErr.message}`);
+                        }
                     }
                 }
             } else {
                 resultados.errores.push(`Reservación omitida (posible duplicado): Asiento ${numeroAsiento}`);
             }
 
+            await client.query('RELEASE SAVEPOINT sp_res');
           } catch (err) {
+            // Revertir solo lo de esta reservación
+            try { await client.query('ROLLBACK TO SAVEPOINT sp_res'); } catch (_) {}
             resultados.reservaciones_fallidos++;
-            resultados.errores.push(`Reservación ${res.asiento[0]}: ${err.message}`);
+            resultados.errores.push(`Reservación ${res?.asiento?.[0] || '[sin-asiento]'}: ${err.message}`);
           }
         }
       }
@@ -269,6 +338,8 @@ export const importarDatosXML = async (xmlBuffer) => {
   return {
     exitoso: resultados.errores.length === 0,
     ...resultados,
-    tiempo_procesamiento: timeMs.toFixed(2)
+    tiempo_procesamiento: timeMs.toFixed(2),
+    impl: 'importer:cleanup',
+    clean_strategy: 'DELETE'
   };
 };

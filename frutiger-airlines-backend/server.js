@@ -59,6 +59,8 @@ app.use('/api/validar-cui', validacionRoutes); // Nota: anidado por /api
 app.use('/api/reservaciones', reservacionRoutes);
 app.use('/api/exportar', gestionDatosRoutes);
 app.use('/api/importar', gestionDatosRoutes);
+// Alias opcional y recomendado: /api/xml/{export|import}
+app.use('/api/xml', gestionDatosRoutes);
 app.use('/api/reportes', reporteRoutes);
 app.use('/api/usuarios', vipRoutes); // Para /api/usuarios/{id}/vip
 
